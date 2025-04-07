@@ -1,0 +1,671 @@
+[
+    {
+        "id": "01fd8c21c1a08e96",
+        "type": "tab",
+        "label": "Ical-to-Schedule",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "556aea321ac683c0",
+        "type": "group",
+        "z": "01fd8c21c1a08e96",
+        "name": "Configuration",
+        "style": {
+            "stroke": "#ff0000",
+            "fill": "#ffbfbf",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "04caef8e128d0433",
+            "eabbd0a37a84e60b"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 312,
+        "h": 82
+    },
+    {
+        "id": "f3910e3af224ef73",
+        "type": "group",
+        "z": "01fd8c21c1a08e96",
+        "name": "Process POST Schedule automate",
+        "style": {
+            "stroke": "#92d04f",
+            "fill": "#e3f3d3",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "4bb43952879fcd67",
+            "450549e0abdce4bb",
+            "42295a77529823a3",
+            "d66fd4cf1c378c1e",
+            "ec4e1d192d4accb4",
+            "34af003d7cb63190",
+            "1f876e804d30bf43",
+            "c456a47e6ffe7f44",
+            "745cd48f9a5d35b2",
+            "7b41df422bdedbf4",
+            "5929fa5b2c979dc2",
+            "7493f80e94f93089",
+            "9bae7c2e7ecef3f1",
+            "c7bda220a7865ebc",
+            "ecb5e5f18e253ce1",
+            "f66c6c987ddf9485",
+            "2aa747535ff5cca7"
+        ],
+        "x": 14,
+        "y": 119,
+        "w": 2852,
+        "h": 322
+    },
+    {
+        "id": "f66c6c987ddf9485",
+        "type": "group",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Create missing BACnet Schedules",
+        "style": {
+            "stroke": "#ff0000",
+            "fill": "#ffbfbf",
+            "label": true,
+            "color": "#000000"
+        },
+        "nodes": [
+            "d32e98f9f800b6ab",
+            "25eca73a56715c34",
+            "b90a775f0afdafd7",
+            "7a665f5f77e354b1",
+            "6e44f845b0133d82"
+        ],
+        "x": 1794,
+        "y": 259,
+        "w": 732,
+        "h": 142
+    },
+    {
+        "id": "b31f626db4e0580d",
+        "type": "comment",
+        "z": "01fd8c21c1a08e96",
+        "name": "iCal to schedule",
+        "info": "Made by Sacha",
+        "x": 500,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "04caef8e128d0433",
+        "type": "function",
+        "z": "01fd8c21c1a08e96",
+        "g": "556aea321ac683c0",
+        "name": "TO CONFIGURE",
+        "func": "//////////////////////////////////////////////////\n////////////    TO CONFIGURE   ///////////////////\n//////////////////////////////////////////////////\n\n// Controller information\nconst controllerIP = \"TO_CONFIGURE\";       // Controller IP Address\nconst controllerLogin = \"TO_CONFIGURE\";            //Apex distech login\nconst controllerPassword = \"TO_CONFIGURE\";  //Apex distech password\n\n//Rooms information\nconst _SALLE_DANSE = 4 ;\n\n// Schedule object information\nconst timeZone = 'Europe/Paris';\nconst dailySchedule = true;                 // Group events in 1 event/day\nconst timeOffsetBeforeStart = 0;            // in min\nconst timeOffsetBeforeEnd = 0;              // in min\nconst contentRmEvent = \"SOBRIETE ENERGETIQUE\";      // if DAILY_SCHEDULE is enable, \n                                                    // all events that content this \n                                                    // string in their description \n                                                    // will be ignored\nconst preview = 7;\nconst pastview = 0;\nconst sorted = false;                       // Events are sorted in chronological order.  \n                                            // This helps to reduce algorithm complexity \n                                            // when enable\n\n// Schedule object values\nconst tempOccupied = 20;\nconst tempOccupiedExam = 21;\nconst tempUnOccupied = 16;\n\n/////////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////////\n/////////////////////////////////////////////////\n\n//Autentification key\nlet bufferkey = Buffer.from(controllerLogin + \":\" + controllerPassword);\nconst keybase64 = bufferkey.toString('base64');\nconst autentikey = \"Basic \" + keybase64;\n\nconst scheduleInstanceNumber = 1;           // Schedule instance number, for Schedule write event tests\n\n// Store variables\nflow.set('g_controllerIP', controllerIP);\nflow.set('g_akey', autentikey);\nflow.set('g_scheduleInstanceNumber', scheduleInstanceNumber);\n\nflow.set('g_tempOccupied', tempOccupied);\nflow.set('g_tempOccupiedExam', tempOccupiedExam);\nflow.set('g_tempUnOccupied', tempUnOccupied);\n\nflow.set('g_timeZone', timeZone);\nflow.set('g_dailySchedule', dailySchedule);\nflow.set('g_timeOffsetBeforeStart', timeOffsetBeforeStart);\nflow.set('g_timeOffsetBeforeEnd', timeOffsetBeforeEnd);\nflow.set('g_contentRmEvent', contentRmEvent);\nflow.set('g_preview', preview);\nflow.set('g_pastview', pastview);\nflow.set('g_sorted', sorted);\n\nflow.set('_SALLE_DANSE', _SALLE_DANSE);\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 210,
+        "y": 60,
+        "wires": [
+            []
+        ],
+        "icon": "node-red/cog.svg"
+    },
+    {
+        "id": "eabbd0a37a84e60b",
+        "type": "inject",
+        "z": "01fd8c21c1a08e96",
+        "g": "556aea321ac683c0",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "true",
+        "payloadType": "bool",
+        "x": 75,
+        "y": 60,
+        "wires": [
+            [
+                "04caef8e128d0433"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "4bb43952879fcd67",
+        "type": "debug",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Debug fct",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1360,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "450549e0abdce4bb",
+        "type": "debug",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Debug HTTP",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1630,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "42295a77529823a3",
+        "type": "function",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Rooms",
+        "func": "//////////////////////////////////////////////\n//////////////// TO CONFIGURE ////////////////\n//////////////////////////////////////////////\n\n// Room template\nlet template = {\n    \"ScheduleID\": 0,\n    \"name\": \"roomName\",\n    \"url\": 'room_url'\n}\n\n// Add your own rooms\nlet rooms = [\n    {\n        \"ScheduleID\": 1,\n        \"name\": \"8D_104_ISE\",\n        \"url\": \"https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=9&projectId=2&calType=ical&lastDate=2042-08-14\",\n    },\n    {\n        \"ScheduleID\": 2,\n        \"name\": \"BOU_8D_120\",\n        \"url\": \"https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=9558&projectId=2&calType=ical&lastDate=2042-08-14\",\n    },\n    {\n        \"ScheduleID\": 3,\n        \"name\": \"Salle_Danse\",\n        \"url\": \"https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=5373&projectId=2&calType=ical&lastDate=2042-08-14\",\n    },\n    {\n        \"ScheduleID\": 4,\n        \"preview\": 10,\n        \"name\": \"9A101\",\n        \"url\": \"https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=2547&projectId=2&calType=ical&lastDate=2042-08-14\",\n    }\n];\n\n/////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////\n/////////////////////////////////////////////\n\nflow.set('g_startTime', Date.now());\nflow.set('g_nbRooms', rooms.length);\nflow.set('g_roomCounter', 0);\n\n// Send each room information as an individual msg\nfor (let j=0; j<rooms.length; j++) {\n    msg.roomInfo = rooms[j];\n    node.send(msg);\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 180,
+        "y": 320,
+        "wires": [
+            [
+                "c456a47e6ffe7f44"
+            ]
+        ],
+        "icon": "node-red/parser-json.svg"
+    },
+    {
+        "id": "d66fd4cf1c378c1e",
+        "type": "inject",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Inject rooms",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "true",
+        "payloadType": "bool",
+        "x": 75,
+        "y": 320,
+        "wires": [
+            [
+                "42295a77529823a3"
+            ]
+        ],
+        "icon": "node-red/arrow-in.svg",
+        "l": false
+    },
+    {
+        "id": "ec4e1d192d4accb4",
+        "type": "debug",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Catch raw msg",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 540,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "34af003d7cb63190",
+        "type": "debug",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Catch complete msg",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "1f876e804d30bf43",
+        "type": "function",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Add settings",
+        "func": "let roomInfo = msg.roomInfo[0];\n// node.warn(roomInfo);\n\n// Add non mandatory information\nif (!roomInfo.hasOwnProperty(\"preview\")){\n    roomInfo[\"preview\"] = flow.get('g_preview');\n}\n\nif (!roomInfo.hasOwnProperty(\"pastview\")){\n    roomInfo[\"pastview\"] = flow.get('g_pastview');\n}\n\nif (!roomInfo.hasOwnProperty(\"timezone\")){\n    roomInfo[\"timezone\"] = flow.get('g_timeZone');\n}\n\nif (!roomInfo.hasOwnProperty(\"sorted\")){\n    roomInfo[\"sorted\"] = flow.get('g_sorted');\n}\n\nif (!roomInfo.hasOwnProperty(\"name\")){\n    node.warn(`The room has no name. Details: ${roomInfo}\\nThe room is now called NoNameRoom`);\n    roomInfo[\"name\"] = \"NoNameRoom\";\n}\n\nif (!roomInfo.hasOwnProperty(\"url\") || !roomInfo.hasOwnProperty(\"ScheduleID\")) {\n    node.error(`The room ${roomInfo.name} has no url or ScheduleID`);\n    return null;\n}\n\nmsg[\"ScheduleID\"] = roomInfo.ScheduleID;\nmsg[\"preview\"] = roomInfo.preview;\nmsg[\"pastview\"] = roomInfo.pastview;\nmsg[\"timezone\"] = roomInfo.timezone;\nmsg[\"url\"] = roomInfo.url;\nmsg[\"transmitTime\"] = Date.now();\n\nnode.warn(roomInfo.name + \" successfully handled\")\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 400,
+        "wires": [
+            [
+                "34af003d7cb63190",
+                "745cd48f9a5d35b2"
+            ]
+        ]
+    },
+    {
+        "id": "c456a47e6ffe7f44",
+        "type": "queue",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "",
+        "input": "roomInfo",
+        "inputType": "msg",
+        "addFields": "\"\"",
+        "addFieldsType": "json",
+        "pourType": "initial",
+        "pourTypeType": "pourType",
+        "pourTime": "",
+        "pourTimeType": "num",
+        "pourAmount": "1",
+        "pourAmountType": "num",
+        "maxUseMemory": "",
+        "x": 350,
+        "y": 400,
+        "wires": [
+            [
+                "1f876e804d30bf43",
+                "ec4e1d192d4accb4"
+            ]
+        ]
+    },
+    {
+        "id": "745cd48f9a5d35b2",
+        "type": "ical-upcoming",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "confignode": "",
+        "timeout": "",
+        "timeoutUnits": "seconds",
+        "cron": "",
+        "name": "Get room calendar",
+        "offsettype": "",
+        "offset": "",
+        "offsetUnitstype": "",
+        "offsetUnits": "",
+        "eventtypes": "events",
+        "eventtypestype": "eventtypes",
+        "calendar": "",
+        "calendartype": "str",
+        "triggertype": "trigger",
+        "trigger": "always",
+        "timezone": "",
+        "timezonetype": "str",
+        "dateformat": "{ \"timeStyle\": \"short\", \"dateStyle\": \"short\" }",
+        "dateformattype": "json",
+        "language": "en",
+        "languagetype": "language",
+        "filterProperty": "summary",
+        "filterPropertytype": "filterProperty",
+        "filterOperator": "between",
+        "filterOperatortype": "filterOperator",
+        "filtertype": "str",
+        "filter2type": "str",
+        "filter2": "",
+        "filter": "",
+        "checkall": false,
+        "endpreview": "",
+        "endpreviewUnits": "",
+        "previewtype": "num",
+        "preview": "",
+        "previewUnitstype": "previewUnits",
+        "previewUnits": "days",
+        "pastviewtype": "num",
+        "pastview": "",
+        "pastviewUnits": "days",
+        "pastviewUnitstype": "pastviewUnits",
+        "x": 770,
+        "y": 400,
+        "wires": [
+            [
+                "9bae7c2e7ecef3f1"
+            ]
+        ]
+    },
+    {
+        "id": "7b41df422bdedbf4",
+        "type": "delay",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Slow down",
+        "pauseType": "delay",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 2770,
+        "y": 400,
+        "wires": [
+            [
+                "c456a47e6ffe7f44"
+            ]
+        ]
+    },
+    {
+        "id": "5929fa5b2c979dc2",
+        "type": "inject",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Force dequeue",
+        "props": [
+            {
+                "p": "dequeue",
+                "v": "true",
+                "vt": "bool"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 140,
+        "y": 400,
+        "wires": [
+            [
+                "c456a47e6ffe7f44"
+            ]
+        ]
+    },
+    {
+        "id": "7493f80e94f93089",
+        "type": "http request",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "HTTP REQUEST",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "0a54777a4b254e96",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1410,
+        "y": 400,
+        "wires": [
+            [
+                "450549e0abdce4bb",
+                "ecb5e5f18e253ce1"
+            ]
+        ]
+    },
+    {
+        "id": "9bae7c2e7ecef3f1",
+        "type": "function",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Create JSON from iCal + POST Special event",
+        "func": "// TO MODIFY\nlet setTempOccup = 21;\nlet setTempUnOccup = null;\n\n// DO NOT MODIFY\nflow.get('g_tempOccupied');\nflow.set('g_tempOccupiedExam');\nflow.set('g_tempUnOccupied');\n\nlet length = msg.total;\nlet jsonObj = {};\nlet events = [];\n\nif (msg.error) {\n    node.error(msg.error.name + ': ' + msg.error.message + '. Impossible to process the calendar.');\n    return {\n        \"method\": \"HALLO!\",\n        \"url\": \"no/url\",\n        \"roomInfo\": msg\n    };\n}\n\n// Catch all the events\nfor (let i = 0; i < length; i++) {\n\n    // Get event information\n    let name = msg.payload[i].summary;\n    let description = msg.payload[i].description;\n    let eventStart = new Date(msg.payload[i].eventStart);\n    let eventEnd = new Date(msg.payload[i].eventEnd);\n    let eventAlreadyExists = false;\n\n    if (flow.get('g_dailySchedule')) {\n        if (description.includes(flow.get('g_contentRmEvent')) && eventEnd.getHours() > 19) eventAlreadyExists = true; // Skip SOBRIETE ENERGETIQUE events\n        else {\n            let start = 0;\n            if (msg.sorted) {\n                start = events.length - 1; // Last event should be the previous one\n            }\n            for (let j = start; j < events.length; j++) {\n                if (eventStart.getDate() == events[j].start.getDate() &&\n                    eventStart.getMonth() == events[j].start.getMonth() &&\n                    eventStart.getFullYear() == events[j].start.getFullYear()) {\n\n                    // Group same day events into only one event\n                    if (eventStart < events[j].start) events[j].start = eventStart;\n                    if (eventEnd > events[j].end) events[j].end = eventEnd;\n                    eventAlreadyExists = true;\n                    events[j].name += ' AND ' + name;\n                }\n            }\n        }\n\n    }\n\n    if (!eventAlreadyExists) {\n        events.push({\n            name: name,\n            start: eventStart,\n            end: eventEnd\n        })\n    };\n};\n\n// Store the events and payload build\nfor (let j = 0; j < events.length; j++) {\n    let name = events[j].name;\n    let day = events[j].start.getDate();\n    let month = events[j].start.getMonth() + 1; // January gives 0\n    let year = events[j].start.getFullYear();\n    let start;\n    let end;\n\n    // Add offset for 1 event/day scheduler\n    if (flow.get('g_dailySchedule')) {\n        start = new Date(events[j].start.valueOf() - flow.get('g_timeOffsetBeforeStart') * 60000).toLocaleTimeString(\"fr-FR\", { timeZone: flow.get('g_timeZone') });\n        end = new Date(events[j].end.valueOf() - flow.get('g_timeOffsetBeforeEnd') * 60000).toLocaleTimeString(\"fr-FR\", { timeZone: flow.get('g_timeZone') });\n    }\n    else {\n        start = events[j].start.toLocaleTimeString(\"fr-FR\", { timeZone: flow.get('g_timeZone') });\n        end = events[j].end.toLocaleTimeString(\"fr-FR\", { timeZone: flow.get('g_timeZone') });\n    }\n\n    // Creating string\n    let message = `{ \"${Number(j + 1)}\": {\n        \"event-priority\": 16, \n        \"period\": { \n            \"date\": {\n                \"month\": ${month}, \n                \"year\": ${year}, \n                \"day-of-month\": ${day}\n            }, \n            \"type\": \"Date\" \n        }, \n        \"name\": \"${name}\", \n        \"transitions\": { \n            \"1\": { \"time\": \"${start}\", \"value\": ${setTempOccup}, \"key\": \"1\" },  \n            \"2\": { \"time\": \"${end}\", \"value\": ${setTempUnOccup}, \"key\": \"2\" } \n        }, \n        \"key\": \"${Number(j + 1)}\" \n    }}`;\n\n    let jsonTemp = JSON.parse(message);     // Transform string into an object\n    jsonObj = { ...jsonObj, ...jsonTemp };   // Merge with the previous object\n};\n\nlet request = {\n    \"method\": \"POST\",\n    \"url\": `https://${flow.get('g_controllerIP')}/api/rest/v2/services/bacnet/local/objects/schedules/${msg.ScheduleID}/special-events`,\n    \"headers\": {\n        Authorization: flow.get('g_akey'),\n        ContentType: \"application/json\"\n    },\n    \"payload\": jsonObj,\n    \"roomInfo\": msg\n};\n\nreturn request;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 400,
+        "wires": [
+            [
+                "4bb43952879fcd67",
+                "7493f80e94f93089"
+            ]
+        ]
+    },
+    {
+        "id": "c7bda220a7865ebc",
+        "type": "function",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "Server's reply",
+        "func": "let roomInfo = msg.roomInfo;\nlet msgCorrect = false;\n\nswitch (msg.statusCode) {\n    case 200:\n        node.warn(`Successfully transmitted to the server. Process time = ${Date.now() - roomInfo.transmitTime} ms`);\n        msgCorrect = true;\n        break;\n    case 400:\n        node.error(\"Error 400: Bad HTTP Request\");\n        if (msg.payload.includes(\"write-access-denied\")) {\n            node.error(\"Error: Trying to write a Read Only object (analogInput)\");\n        }\n        break;\n    case 401:\n        node.error(\"Error 401: Can't connect to controller: Authorization error\");\n        break;\n    case 500:\n        node.error(\"Error 500: Server Error 500\");\n        break;\n    case 404:\n        node.error(\"Error 404\");\n        break;\n    case \"ETIMEDOUT\":\n        node.error(\"Error: Can't connect to controller: TimeOut\");\n        break;\n    case 501:\n        node.error(\"Error 501. Not recognized request methode. Server not capable of supporting it for any resource\")\n        break;\n    case \"ENOTFOUND\":\n        node.error(\"RequestError: no url found. Please correct the url\")\n}\n\n// Debug information\nlet nbRooms = flow.get('g_nbRooms');\nflow.set('g_roomCounter', flow.get('g_roomCounter') + 1);\nlet roomCounter = flow.get('g_roomCounter');\n\nif (roomCounter == nbRooms && msgCorrect) {\n    node.warn(`All rooms processed in ${(Date.now() - flow.get('g_startTime')) / 1000} s`);\n}\nelse if (!msgCorrect) {\n    node.error(\"Schedule configuration not properly processed\");\n}\n\nmsg.dequeue = true;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2600,
+        "y": 200,
+        "wires": [
+            [
+                "7b41df422bdedbf4"
+            ]
+        ]
+    },
+    {
+        "id": "ecb5e5f18e253ce1",
+        "type": "function",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "BACnet Schedule Exist ?",
+        "func": "let room = msg.roomInfo;\n\nswitch (msg.statusCode) {\n    //////////////////////////////////////////////////    \n    // Case 200 : \"Success\" > Stops here OR continue to read Downlink Objects. \n    // Case 404 : \"Not Found\" > Create Objects\n    //////////////////////////////////////////////////\n    case 200:\n        return [msg, null];\n        \n\n    case 400:\n        node.error(\"Error : Bad HTTP Request\");\n        if (msg.payload.includes(\"write-access-denied\")) {\n            node.error(\"Error : Trying to write a Read Only object (analogInput)\");\n        }\n        return [null, null];\n\n    case 401:\n        node.error(\"Error : Can't connect to controller : Authorization error\");\n        return [null, null];\n\n    case 500:\n        node.error(\"Error : Server Error 500\");\n        return [null, null];\n\n    case 404:\n        if (msg.payload.includes(\"Not Found\")) {\n             return [null,msg];      // Create Downlink Objects\n        }else{\n            node.error(\"Error : 404\");                 // Stops here\n            return [null, null];\n        } \n\n    case \"ETIMEDOUT\":\n        node.error(\"Error : Can't connect to controller : TimeOut\");\n        return [null, null];\n\n    case \"UNABLE_TO_VERIFY_LEAF_SIGNATURE\":\n        node.error(\"Error : You forgot to enable the TLS config in your HTTP node\");\n        return [null, null];\n\n}\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1630,
+        "y": 200,
+        "wires": [
+            [
+                "2aa747535ff5cca7",
+                "c7bda220a7865ebc"
+            ],
+            [
+                "d32e98f9f800b6ab",
+                "6e44f845b0133d82"
+            ]
+        ],
+        "outputLabels": [
+            "Yes",
+            "No"
+        ],
+        "icon": "node-red/switch.svg"
+    },
+    {
+        "id": "d32e98f9f800b6ab",
+        "type": "function",
+        "z": "01fd8c21c1a08e96",
+        "g": "f66c6c987ddf9485",
+        "name": "CREATE Objects",
+        "func": "\nlet room = msg.roomInfo;\n\n  ///////////////////////////////////////////////////////////\n  ////// Distech Controls Eclypse APEX\n  ////// https://www.postman.com/distech/distech-ecy-v2-public/request/57jbx8w/create-objects-multiple\n  ///////////////////////////////////////////////////////////\n\n\n    /**********  Objects creation on the controller\n    {\n        \"method\": \"POST\",\n        \"url\": \"https://\" + flow.get('$parent.g_controllerIP') +\"/api/rest/v2/batch\",\n        \"headers\": {Authorization: flow.get('$parent.g_httpAuthentication'),\n                  ContentType: \"application/json\"}\n        \"payload\":{\n            \"requests\": [\n                {\n                  \"id\": \"1\",\n                  \"method\": \"POST\",\n                  \"url\": \"/api/rest/v2/services/bacnet/local/objects/add\",\n                  \"body\": {\n                    \"object-type\": \"AnalogValue\",\n                    \"instance-number\": 10010,\n                    \"name\": \"apiAVTest10\"\n                  }\n                },\n                {\n                  \"id\": \"2\",\n                  \"method\": \"POST\",\n                  \"url\": \"/api/rest/v2/services/bacnet/local/objects/add\",\n                  \"body\": {\n                    \"object-type\": \"BinaryValue\",\n                    \"instance-number\": 10010,\n                    \"name\": \"apiBVTest10\"\n                  }\n                },\n                ...\n            ]\n        },\n        \"requestTimeout\" : xxx (ms)\n    }\n    */\n\n\n    let request = [];\n\n\nlet temp = '{ \"id\": \"1\", \"method\": \"POST\", \"url\": \"/api/rest/v2/services/bacnet/local/objects/add\", \"body\": { \"object-type\": \"Schedule\", \"instance-number\": ' + room.roomInfo[0].ScheduleID + ', \"name\": \"' + room.roomInfo[0].name + '\" } }';\n      request.push(JSON.parse(temp));\n    \n\n    // Return HTTP Request\n    return {\n      \"method\": \"POST\",\n      \"url\": \"https://\" + flow.get('g_controllerIP') + \"/api/rest/v2/batch\",\n      \"headers\": {\n        Authorization: flow.get('g_akey'),\n        ContentType: \"application/json\"\n      },\n      \"payload\": { \"requests\": request },\n      \"roomInfo\": room\n    }\n\n  \n ",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1910,
+        "y": 360,
+        "wires": [
+            [
+                "25eca73a56715c34"
+            ]
+        ]
+    },
+    {
+        "id": "25eca73a56715c34",
+        "type": "http request",
+        "z": "01fd8c21c1a08e96",
+        "g": "f66c6c987ddf9485",
+        "name": "HTTP REQUEST",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "38c4db63982e52db",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 2190,
+        "y": 360,
+        "wires": [
+            [
+                "b90a775f0afdafd7",
+                "7a665f5f77e354b1",
+                "c7bda220a7865ebc"
+            ]
+        ]
+    },
+    {
+        "id": "b90a775f0afdafd7",
+        "type": "function",
+        "z": "01fd8c21c1a08e96",
+        "g": "f66c6c987ddf9485",
+        "name": "Creation results",
+        "func": "\n\nswitch (msg.statusCode) {\n    //////////////////////////////////////////////////    \n    // Case 200 : \"Success\" > Objects have been created\n    //////////////////////////////////////////////////\n    case 200:\n        if (msg.payload.includes(\"\\\"status\\\":200\")) {\n            \n        }\n        if (msg.payload.includes(\"Instance already exists\") || msg.payload.includes(\"Object with same name already exists\")) {\n            \n        }\n        break;\n\n    case 400:\n        node.error(\"Error : Bad HTTP Request\");\n        break;\n\n    case 401:\n        node.error(\"Error : Can't connect to controller : Authorization error\");\n        break;\n\n    case 500:\n        node.error(\"Error : Server Error 500\");\n        break;\n\n    case 404:\n        node.error(\"Error : 404\");\n        break;\n\n\n    case \"ETIMEDOUT\":\n        node.error(\"Error : Can't connect to controller : TimeOut\");\n        break;\n\n    case \"UNABLE_TO_VERIFY_LEAF_SIGNATURE\":\n        node.error(\"Error : You forgot to enable the TLS config in your HTTP node\");\n        break;\n\n}\n\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Le code ajouté ici sera exécuté une fois\n// à chaque démarrage du noeud.\nglobal.set('g_errorObjectCreation', 0);",
+        "finalize": "",
+        "libs": [],
+        "x": 2420,
+        "y": 360,
+        "wires": [
+            []
+        ],
+        "icon": "node-red/alert.svg"
+    },
+    {
+        "id": "6e44f845b0133d82",
+        "type": "debug",
+        "z": "01fd8c21c1a08e96",
+        "g": "f66c6c987ddf9485",
+        "name": "debug inexistant",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1900,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "2aa747535ff5cca7",
+        "type": "debug",
+        "z": "01fd8c21c1a08e96",
+        "g": "f3910e3af224ef73",
+        "name": "debug existant",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1900,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "7a665f5f77e354b1",
+        "type": "debug",
+        "z": "01fd8c21c1a08e96",
+        "g": "f66c6c987ddf9485",
+        "name": "debug HTTP Create",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2240,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "0a54777a4b254e96",
+        "type": "tls-config",
+        "name": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "",
+        "verifyservercert": false,
+        "alpnprotocol": ""
+    },
+    {
+        "id": "38c4db63982e52db",
+        "type": "tls-config",
+        "name": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "",
+        "verifyservercert": false,
+        "alpnprotocol": ""
+    }
+]
