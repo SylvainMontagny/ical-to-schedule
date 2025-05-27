@@ -1,0 +1,217 @@
+[
+    {
+        "id": "4f797fb69f609478",
+        "type": "debug",
+        "z": "ff477416b0a79e72",
+        "name": "debug HTTP binding",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1140,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "5cb381b9b65e4668",
+        "type": "group",
+        "z": "ff477416b0a79e72",
+        "name": "binding between schedules Analog values and devices Analog values ",
+        "style": {
+            "fill": "#ffefbf",
+            "label": true,
+            "color": "#000000",
+            "stroke": "#ffC000"
+        },
+        "nodes": [
+            "833ae9ea21285bd3",
+            "4ece56e49653167b",
+            "dff53c928f26f6f3",
+            "24e5f2954e189f00",
+            "529175c5ed1e7d53",
+            "6af43b1dc6103418",
+            "545a17ca229c8c4a"
+        ],
+        "x": 14,
+        "y": 500,
+        "w": 1012,
+        "h": 121
+    },
+    {
+        "id": "833ae9ea21285bd3",
+        "type": "inject",
+        "z": "ff477416b0a79e72",
+        "g": "5cb381b9b65e4668",
+        "name": "Link",
+        "props": [],
+        "repeat": "600",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "60",
+        "topic": "",
+        "x": 75,
+        "y": 580,
+        "wires": [
+            [
+                "4ece56e49653167b"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "4ece56e49653167b",
+        "type": "function",
+        "z": "ff477416b0a79e72",
+        "g": "5cb381b9b65e4668",
+        "name": "Binding between setpoint and schedule analog value",
+        "func": "\nconst rooms = flow.get(\"f_rooms\");\nlet deviceInstanceRange = flow.get(\"f_deviceInstanceRange\");\nvar setPoint;\nconst deviceObjectInstanceNum = flow.get(\"f_deviceObjectInstanceNum\");\nconst deviceInstanceOffset = flow.get(\"f_deviceInstanceOffset\"); //this offset come from the LoRaBAC application\nlet schedulesAnalogValuesOffset = flow.get(\"f_schedulesAnalogValuesOffset\");\nvar property_references = [];\n\nfor (var room in rooms) {\n    let scheduleID = rooms[room][\"ScheduleID\"];\n    let roomName = rooms[room].name;\n    let devTable = rooms[room].devices;\n    for (let device in devTable) {\n    \n        // Return HTTP Request\n        node.send({\n            \"request\":{\n                \"method\": \"POST\",\n                \"url\": \"https://\" + flow.get('f_controllerIP') + \"/api/rest/v2/services/events/bindings/\" + roomName + \"-device-\" + devTable[device],\n                \"headers\": {\n                  Authorization: flow.get(\"f_akey\"),\n                  ContentType: \"application/json\"\n                },\n                 \"payload\": {\n                    \"key\": roomName + \"-device-\" + devTable[device],\n                    \"sync-a-to-b\": {\n                        \"options\": {\n                            \"priorities\": true,\n                            \"write-priority\": 14,\n                            \"value\": false,\n                            \"out-of-service\": true\n                        },\n                        \"triggers\": {\n                            \"1\": {\n                                \"key\": \"1\",\n                                \"min-sync-time\": 0.0,\n                                \"type\": \"OnChange\"\n                            }\n                        }\n                    },\n                    \"element-b\": \"/services/bacnet/local/objects/analog-values/\" + ((devTable[device] * deviceInstanceRange) + deviceInstanceOffset + deviceObjectInstanceNum),\n                    \"element-a\": \"/services/bacnet/local/objects/analog-values/\" + (scheduleID + schedulesAnalogValuesOffset),\n                    \"initialize\": \"b-to-a\",\n                    \"type\": \"ControlElement\",\n                    \"sync-b-to-a\": {\n                        \"options\": {\n                            \"priorities\": true,\n                            \"write-priority\": 14,\n                            \"value\": false,\n                            \"out-of-service\": true\n                        },\n                        \"triggers\": {\n                            \"1\": {\n                                \"key\": \"1\",\n                                \"min-sync-time\": 0.0,\n                                \"type\": \"OnChange\"\n                            }\n                        }\n                    }\n                },\n                \"requestTimeout\": 5000\n            }\n        });\n}\n}   ",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 580,
+        "wires": [
+            [
+                "24e5f2954e189f00"
+            ]
+        ]
+    },
+    {
+        "id": "dff53c928f26f6f3",
+        "type": "http request",
+        "z": "ff477416b0a79e72",
+        "g": "5cb381b9b65e4668",
+        "name": "HTTP REQUEST",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "c1fc527789e0bc0d",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 910,
+        "y": 580,
+        "wires": [
+            [
+                "4f797fb69f609478"
+            ]
+        ]
+    },
+    {
+        "id": "24e5f2954e189f00",
+        "type": "queue",
+        "z": "ff477416b0a79e72",
+        "g": "5cb381b9b65e4668",
+        "name": "",
+        "input": "request",
+        "inputType": "msg",
+        "addFields": "{}",
+        "addFieldsType": "json",
+        "pourType": "initial",
+        "pourTypeType": "pourType",
+        "pourTime": "",
+        "pourTimeType": "num",
+        "pourAmount": "1",
+        "pourAmountType": "num",
+        "maxUseMemory": "",
+        "x": 590,
+        "y": 580,
+        "wires": [
+            [
+                "545a17ca229c8c4a"
+            ]
+        ]
+    },
+    {
+        "id": "529175c5ed1e7d53",
+        "type": "complete",
+        "z": "ff477416b0a79e72",
+        "g": "5cb381b9b65e4668",
+        "name": "HTTP request complete",
+        "scope": [
+            "dff53c928f26f6f3"
+        ],
+        "uncaught": false,
+        "x": 265,
+        "y": 541,
+        "wires": [
+            [
+                "6af43b1dc6103418"
+            ]
+        ]
+    },
+    {
+        "id": "6af43b1dc6103418",
+        "type": "change",
+        "z": "ff477416b0a79e72",
+        "g": "5cb381b9b65e4668",
+        "name": "dequeue",
+        "rules": [
+            {
+                "t": "set",
+                "p": "dequeue",
+                "pt": "msg",
+                "to": "true",
+                "tot": "bool"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 451,
+        "y": 541,
+        "wires": [
+            [
+                "24e5f2954e189f00"
+            ]
+        ]
+    },
+    {
+        "id": "545a17ca229c8c4a",
+        "type": "function",
+        "z": "ff477416b0a79e72",
+        "g": "5cb381b9b65e4668",
+        "name": "rebuild msg",
+        "func": "msg = { \n    \"method\": msg.request[0].method, \n    \"url\": msg.request[0].url, \n    \"headers\": msg.request[0].headers, \n    \"payload\": msg.request[0].payload,\n    \"requestTimeout\": msg.request[0].requestTimeout\n     }\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 580,
+        "wires": [
+            [
+                "dff53c928f26f6f3"
+            ]
+        ]
+    },
+    {
+        "id": "c1fc527789e0bc0d",
+        "type": "tls-config",
+        "name": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "",
+        "verifyservercert": false,
+        "alpnprotocol": ""
+    }
+]

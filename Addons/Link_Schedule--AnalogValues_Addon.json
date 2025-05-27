@@ -1,0 +1,193 @@
+[
+    {
+        "id": "711f8e4ff2a30b59",
+        "type": "debug",
+        "z": "ff477416b0a79e72",
+        "name": "Debug HTTP Read schedule",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "40852241f2b1d45e",
+        "type": "debug",
+        "z": "ff477416b0a79e72",
+        "name": "Debug HTTP Write Analog Values",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1260,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "30a9f4367b86df4e",
+        "type": "group",
+        "z": "ff477416b0a79e72",
+        "name": "link between schedules and Analog values ",
+        "style": {
+            "fill": "#ffefbf",
+            "label": true,
+            "color": "#000000",
+            "stroke": "#ffC000"
+        },
+        "nodes": [
+            "57c0bf224236f7ca",
+            "dfed19aa9c5e7874",
+            "5bdb4a3a1fcc34e6",
+            "6687601659d53006",
+            "6761d1aef0d63ff1"
+        ],
+        "x": 14,
+        "y": 359,
+        "w": 1092,
+        "h": 82
+    },
+    {
+        "id": "57c0bf224236f7ca",
+        "type": "inject",
+        "z": "ff477416b0a79e72",
+        "g": "30a9f4367b86df4e",
+        "name": "Link",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "60",
+        "topic": "",
+        "payload": "true",
+        "payloadType": "bool",
+        "x": 75,
+        "y": 400,
+        "wires": [
+            [
+                "dfed19aa9c5e7874"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "dfed19aa9c5e7874",
+        "type": "function",
+        "z": "ff477416b0a79e72",
+        "g": "30a9f4367b86df4e",
+        "name": "GET schedule present value",
+        "func": "\nlet rooms = flow.get(\"f_rooms\");\nlet property_references =[];\n\n// This resource gets the present value of the specified Schedule instance.\nfor (let room in rooms) {\n    let temp = '{ \"type\": \"Schedule\", \"instance\": ' + rooms[room][\"ScheduleID\"] + ', \"property\": \"presentValue\"}';\n    property_references.push(JSON.parse(temp));\n}\n\nreturn {\n          \"method\": \"POST\",\n          \"url\": \"https://\" + flow.get(\"f_controllerIP\") + \"/api/rest/v2/services/bacnet/local/objects/read-property-multiple\",\n          \"headers\": {\n            Authorization: flow.get(\"f_akey\"),\n            ContentType: \"application/json\"\n          },\n          \"payload\": {\n            \"encode\": \"text\",\n            \"property-references\": property_references\n          },\n          \"requestTimeout\": 5000,\n        }\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 260,
+        "y": 400,
+        "wires": [
+            [
+                "5bdb4a3a1fcc34e6"
+            ]
+        ]
+    },
+    {
+        "id": "5bdb4a3a1fcc34e6",
+        "type": "http request",
+        "z": "ff477416b0a79e72",
+        "g": "30a9f4367b86df4e",
+        "name": "HTTP REQUEST",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "0a54777a4b254e96",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 510,
+        "y": 400,
+        "wires": [
+            [
+                "711f8e4ff2a30b59",
+                "6687601659d53006"
+            ]
+        ]
+    },
+    {
+        "id": "6687601659d53006",
+        "type": "function",
+        "z": "ff477416b0a79e72",
+        "g": "30a9f4367b86df4e",
+        "name": "WRITE Analog Values",
+        "func": "let rooms = flow.get(\"f_rooms\");\nlet results = msg.results;\nlet setpoint;\nlet schedulesAnalogValuesOffset = flow.get(\"f_schedulesAnalogValuesOffset\");; \nlet property_references = [];\n\n\nfor (let result in results) {\n  //Set the correct value (est-ce utile ?)\n  if (results[result].value == 2) {\n    setpoint = flow.get(\"f_tempUnOccupied\");\n  } else {\n    setpoint = results[result].value;\n  }\n\n  let temp = '{ \"type\": \"analogValue\", \"instance\": ' + (schedulesAnalogValuesOffset + results[result].instance)  + ', \"property\": \"presentValue\", \"value\": ' + setpoint + ' }';\n  property_references.push(JSON.parse(temp));\n      \n}\n\n\n// Return HTTP Request\nreturn {\n  \"method\": \"POST\",\n  \"url\": \"https://\" + flow.get(\"f_controllerIP\") + \"/api/rest/v2/services/bacnet/local/objects/write-property-multiple\",\n  \"headers\": {\n    Authorization: flow.get(\"f_akey\"),\n    ContentType: \"application/json\"\n  },\n  \"payload\": {\n    \"encode\": \"text\",\n    \"property-references\": property_references\n  },\n  \"requestTimeout\": 5000,\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 400,
+        "wires": [
+            [
+                "6761d1aef0d63ff1"
+            ]
+        ]
+    },
+    {
+        "id": "6761d1aef0d63ff1",
+        "type": "http request",
+        "z": "ff477416b0a79e72",
+        "g": "30a9f4367b86df4e",
+        "name": "HTTP REQUEST",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "0a54777a4b254e96",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 990,
+        "y": 400,
+        "wires": [
+            [
+                "40852241f2b1d45e"
+            ]
+        ]
+    },
+    {
+        "id": "0a54777a4b254e96",
+        "type": "tls-config",
+        "name": "",
+        "cert": "",
+        "key": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "",
+        "verifyservercert": false,
+        "alpnprotocol": ""
+    }
+]
