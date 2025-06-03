@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>iCalendar Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 300px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #0078D7;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>iCalendar Generator</h1>
+
+  <label for="interval">Occupancy time (minutes) :</label>
+  <input type="number" id="occupancy" value="30" min="1"><br><br>
+  
+  <label for="interval">interval time (minutes) :</label>
+  <input type="number" id="interval" value="30" min="1"><br><br>
+
+  <label for="endDate">starting date :</label>
+  <input type="date" id="startDate"><br><br>
+
+  <label for="endDate">end date :</label>
+  <input type="date" id="endDate"><br><br>
+  
+  <button onclick="generateICS()">Generate .ics file</button>
+</div>
+  <script>
+    function pad(n) {
+      return n < 10 ? '0' + n : n;
+    }
+
+    function formatDate(date) {
+      return date.getUTCFullYear() +
+        pad(date.getUTCMonth() + 1) +
+        pad(date.getUTCDate()) + 'T' +
+        pad(date.getUTCHours()) +
+        pad(date.getUTCMinutes()) +
+        '00Z';
+    }
+
+    function generateICS() {
+      const occupancy = parseInt(document.getElementById('occupancy').value);
+      const interval = parseInt(document.getElementById('interval').value);
+      const startDateInput = document.getElementById('startDate').value;
+      const endDateInput = document.getElementById('endDate').value;
+
+      if (!endDateInput) {
+        alert("Veuillez sélectionner une date de fin.");
+        return;
+      }
+
+      const startHour = 5;
+      const endHour = 19;
+      const now = new Date();
+      const startDate = new Date(startDateInput);
+	  startDate.setHours(23, 59, 59, 999);
+      const endDate = new Date(endDateInput);
+      endDate.setHours(23, 59, 59, 999); // inclure toute la journée
+
+      let calendar = `BEGIN:VCALENDAR
+VERSION:2.0
+CALSCALE:GREGORIAN
+PRODID:-//Activités toutes les ${interval} minutes//FR
+`;
+
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        let current = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), startHour, 0));
+        const dayEnd = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), endHour, 0));
+
+        while (current < dayEnd) {
+          const start = new Date(current);
+          current.setMinutes(current.getMinutes() + occupancy);
+          const endEvent = new Date(current);
+
+          // Ajouter uniquement les activités
+          calendar += `BEGIN:VEVENT
+SUMMARY:Occupied
+DTSTART:${formatDate(start)}
+DTEND:${formatDate(endEvent)}
+END:VEVENT
+`;
+
+          // Sauter la pause
+          current.setMinutes(current.getMinutes() + interval);
+        }
+      }
+
+      calendar += 'END:VCALENDAR';
+
+      const blob = new Blob([calendar], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'activites.ics';
+      link.click();
+    }
+  </script>
+</body>
+</html>
