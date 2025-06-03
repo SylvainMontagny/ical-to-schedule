@@ -364,17 +364,17 @@
         "alpnprotocol": ""
     },
     {
-        "id": "09ebd12a5619dd1a",
+        "id": "ff477416b0a79e72",
         "type": "tab",
-        "label": "Ical-to-Schedule",
+        "label": "Ical-To-Schedule",
         "disabled": false,
         "info": "",
         "env": []
     },
     {
-        "id": "3ba68f1a6aa151b2",
+        "id": "4f55c46d238ce1fe",
         "type": "group",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "name": "Configuration",
         "style": {
             "stroke": "#ff0000",
@@ -383,18 +383,18 @@
             "color": "#000000"
         },
         "nodes": [
-            "6a398abb89372323",
-            "8cf4e11230254889"
+            "afdcb9ab47522dc1",
+            "b416e36624220443"
         ],
-        "x": 34,
-        "y": 39,
+        "x": 54,
+        "y": 99,
         "w": 312,
         "h": 82
     },
     {
-        "id": "c7b93f3ea8b40cb1",
+        "id": "ff6d80bcde020c52",
         "type": "group",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "name": "Process POST Schedule automate",
         "style": {
             "stroke": "#92d04f",
@@ -403,27 +403,27 @@
             "color": "#000000"
         },
         "nodes": [
-            "5986fc8f424a73e1",
-            "7bb873de36318772",
-            "49bb7e58bf4f6980",
-            "a737fbbe8387494c",
-            "9c6bfe4be386077c",
-            "f2d02c98141e7690",
-            "a167e09664da0388",
-            "373ab8fe0697880e",
-            "0bf220aa6d63e511"
+            "01c9bba14c3a5697",
+            "283e975103416336",
+            "34d790016980d585",
+            "6174c751354a85d1",
+            "01fa8b2dda699a9f",
+            "18b36d20e025263e",
+            "6026bbd195e5b5ae",
+            "0a998ed924b9543e",
+            "e922a30640ddcfaf"
         ],
-        "x": 27,
-        "y": 147,
+        "x": 47,
+        "y": 207,
         "w": 1079,
         "h": 142
     },
     {
-        "id": "7ca4dba22f897c11",
+        "id": "57d168970caef7eb",
         "type": "debug",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "name": "Debug HTTP Write Schedule",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -431,16 +431,16 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 780,
-        "y": 120,
+        "x": 800,
+        "y": 180,
         "wires": []
     },
     {
-        "id": "ac63c79ebdc1d1eb",
+        "id": "63bf59c6b5d483e5",
         "type": "debug",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "name": "debug HTTP Create schedule",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -448,35 +448,35 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 993,
-        "y": 308,
+        "x": 1073,
+        "y": 369,
         "wires": []
     },
     {
-        "id": "6a398abb89372323",
+        "id": "afdcb9ab47522dc1",
         "type": "function",
-        "z": "09ebd12a5619dd1a",
-        "g": "3ba68f1a6aa151b2",
+        "z": "ff477416b0a79e72",
+        "g": "4f55c46d238ce1fe",
         "name": "TO CONFIGURE",
-        "func": "//////////////////////////////////////////////\n//////////////// TO CONFIGURE ////////////////\n//////////////////////////////////////////////\n\n// Controller information\nconst controllerIP = \"TO_CONFIGURE\";       // Controller IP Address\nconst controllerLogin = \"TO_CONFIGURE\";            //Apex distech login\nconst controllerPassword = \"TO_CONFIGURE\";  //Apex distech password\n\n// Schedule object information\nconst timeZone = 'Europe/Paris';\nconst dailySchedule = false;                 // Group events in 1 event/day\nconst timeOffsetBeforeStart = 0;            // in min\nconst timeOffsetBeforeEnd = 0;              // in min\nconst contentRmEvent = [\"TO_CONFIGURE\"];      // if DAILY_SCHEDULE is enable, \n                                                    // all events that content this \n                                                    // string in their description \n                                                    // will be ignored\nconst preview = 7;\nconst pastview = 0;\nconst sorted = false;                       // Events are sorted in chronological order.  \n                                            // This helps to reduce algorithm complexity \n                                            // when enable\n\n// Schedule object values\nconst tempOccupied = 20;\nconst tempUnOccupied = 17;\n\n//  binding values /!\\Not useful to configure if binding is not used\nconst generateScheduleAnalogValues = false; //  If enabled will generate an analog value for each schedule\nconst schedulesAnalogValuesOffset = 10000;  //  The starting instance of theses values\nconst deviceInstanceOffset = 0; // Device Offset configured in LoRaBAC\nconst deviceInstanceRange = 10; // Instance range of analog values object of the device configured in LoRaBAC\nconst deviceObjectInstanceNum = 2; // Instance offset of the analog values object of the device you want to bind with the schedule configured in LoRaBAC\n\n\n\n// Room template\nlet template = {\n    \"ScheduleID\": 0,    //To use the link correctly make sure to use following numbers and start with 0\n    \"name\": \"roomName\",\n    \"devices\": [0, 1, 2], //device number of LoRaBAC\n    \"url\": 'room_url'\n}\n\n// Add your own rooms\nlet rooms = [\n    {\n        \"ScheduleID\": 0,\n        \"name\": \"test\",\n        \"devices\": [1],\n        \"url\": \"https://calendar.google.com/calendar/ical/7f40863311d83d9ef22d9ccfddf3fa32fa7669054f85f880d255caee81254114%40group.calendar.google.com/private-ec1cc71468607f7b01ca829832811b53/basic.ics\",\n    }\n];\n\n/////////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////////\n/////////////////////////////////////////////////\nfor (let r in rooms) {\n    const room = rooms[r]\n    // Add non mandatory information\n    if (!room.hasOwnProperty(\"preview\")){\n        room[\"preview\"] = flow.get('g_preview');\n    }\n\n    if (!room.hasOwnProperty(\"pastview\")){\n        room[\"pastview\"] = flow.get('g_pastview');\n    }\n\n    if (!room.hasOwnProperty(\"timezone\")){\n        room[\"timezone\"] = flow.get('g_timeZone');\n    }\n\n    if (!room.hasOwnProperty(\"sorted\")){\n        room[\"sorted\"] = flow.get('g_sorted');\n    }\n\n    if (!room.hasOwnProperty(\"name\")){\n        node.warn(`The room has no name. Details: ${room}\\nThe room is now called NoNameRoom`);\n        room[\"name\"] = \"NoNameRoom\";\n    }\n\n    if (!room.hasOwnProperty(\"url\") || !room.hasOwnProperty(\"ScheduleID\")) {\n        node.error(`The room ${room.name} has no url or ScheduleID`);\n        node.status({fill:\"red\",shape:\"dot\",text:`The room ${room.name} has no url or ScheduleID`});\n        return null;\n    }\n\n}\n\n//Autentification key\nlet bufferkey = Buffer.from(controllerLogin + \":\" + controllerPassword);\nconst keybase64 = bufferkey.toString('base64');\nconst autentikey = \"Basic \" + keybase64;\n\n// Store variables\nflow.set('f_controllerIP', controllerIP);\nflow.set('f_akey', autentikey);\n\nflow.set('f_tempOccupied', tempOccupied);\nflow.set('f_tempUnOccupied', tempUnOccupied);\n\nflow.set('f_schedulesAnalogValuesOffset',schedulesAnalogValuesOffset);\nflow.set('f_deviceInstanceOffset',deviceInstanceOffset);\nflow.set('f_deviceInstanceRange',deviceInstanceRange);\nflow.set('f_deviceObjectInstanceNum',deviceObjectInstanceNum);\nflow.set(\"f_generateScheduleAnalogValues\", generateScheduleAnalogValues);\n\n\nflow.set('f_timeZone', timeZone);\nflow.set('f_dailySchedule', dailySchedule);\nflow.set('f_timeOffsetBeforeStart', timeOffsetBeforeStart);\nflow.set('f_timeOffsetBeforeEnd', timeOffsetBeforeEnd);\nflow.set('f_contentRmEvent', contentRmEvent);\nflow.set('f_preview', preview);\nflow.set('f_pastview', pastview);\nflow.set('f_sorted', sorted);\n\nflow.set('f_rooms', rooms);\n\n\n",
+        "func": "//////////////////////////////////////////////\n//////////////// TO CONFIGURE ////////////////\n//////////////////////////////////////////////\n\n// Controller information\nconst controllerIP = \"TO_CONFIGURE\";       // Controller IP Address\nconst controllerLogin = \"TOCONFIGURE\";            //Apex distech login\nconst controllerPassword = \"TO_CONFIGURE\";  //Apex distech password\n\n// Schedule object information\nconst timeZone = 'Europe/Paris';\nconst dailySchedule = false;                 // Group events in 1 event/day\nconst timeOffsetBeforeStart = 0;            // in min\nconst timeOffsetBeforeEnd = 0;              // in min\nconst contentRmEvent = [\"TO_CONFIGURE\"];      // if DAILY_SCHEDULE is enable, \n                                                    // all events that content this \n                                                    // string in their description \n                                                    // will be ignored\nconst preview = 7;\nconst pastview = 0;\nconst sorted = false;                       // Events are sorted in chronological order.  \n                                            // This helps to reduce algorithm complexity \n                                            // when enable\n\n// Schedule object values\nconst tempOccupied = 20;\nconst tempUnOccupied = 17;\n\n//  binding values /!\\Not useful to configure if binding is not used\nconst generateScheduleAnalogValues = false; //  If enabled will generate an analog value for each schedule\nconst schedulesAnalogValuesOffset = 10000;  //  The starting instance of theses values\nconst deviceInstanceOffset = 0; // Device Offset configured in LoRaBAC\nconst deviceInstanceRange = 10; // Instance range of analog values object of the device configured in LoRaBAC\nconst deviceObjectInstanceNum = 2; // Instance offset of the analog values object of the device you want to bind with the schedule configured in LoRaBAC\n\n\n/////////////////////////////\n/////// Room template ///////\n/////////////////////////////\n/*\n    let rooms = {\n        \"ScheduleID\": 0,    //To use the link correctly make sure to use following numbers and start with 0\n        \"name\": \"roomName\",\n        \"devices\": [0, 1, 2], //device number of LoRaBAC\n        \"url\": 'room_url'\n    }\n*/\n\n// Add your own rooms\nlet rooms = [\n    {\n        \"ScheduleID\": ,\n        \"name\": \"\",\n        \"devices\": [],\n        \"url\": \"\",\n    }\n];\n\n/////////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////////\n/////////////////////////////////////////////////\nfor (let r in rooms) {\n    const room = rooms[r]\n    // Add non mandatory information\n    if (!room.hasOwnProperty(\"preview\")){\n        room[\"preview\"] = flow.get('g_preview');\n    }\n\n    if (!room.hasOwnProperty(\"pastview\")){\n        room[\"pastview\"] = flow.get('g_pastview');\n    }\n\n    if (!room.hasOwnProperty(\"timezone\")){\n        room[\"timezone\"] = flow.get('g_timeZone');\n    }\n\n    if (!room.hasOwnProperty(\"sorted\")){\n        room[\"sorted\"] = flow.get('g_sorted');\n    }\n\n    if (!room.hasOwnProperty(\"name\")){\n        node.warn(`The room has no name. Details: ${room}\\nThe room is now called NoNameRoom`);\n        room[\"name\"] = \"NoNameRoom\";\n    }\n\n    if (!room.hasOwnProperty(\"url\") || !room.hasOwnProperty(\"ScheduleID\")) {\n        node.error(`The room ${room.name} has no url or ScheduleID`);\n        node.status({fill:\"red\",shape:\"dot\",text:`The room ${room.name} has no url or ScheduleID`});\n        return null;\n    }\n\n}\n\n//Autentification key\nlet bufferkey = Buffer.from(controllerLogin + \":\" + controllerPassword);\nconst keybase64 = bufferkey.toString('base64');\nconst autentikey = \"Basic \" + keybase64;\n\n// Store variables\nflow.set('f_controllerIP', controllerIP);\nflow.set('f_akey', autentikey);\n\nflow.set('f_tempOccupied', tempOccupied);\nflow.set('f_tempUnOccupied', tempUnOccupied);\n\nflow.set('f_schedulesAnalogValuesOffset',schedulesAnalogValuesOffset);\nflow.set('f_deviceInstanceOffset',deviceInstanceOffset);\nflow.set('f_deviceInstanceRange',deviceInstanceRange);\nflow.set('f_deviceObjectInstanceNum',deviceObjectInstanceNum);\nflow.set(\"f_generateScheduleAnalogValues\", generateScheduleAnalogValues);\n\n\nflow.set('f_timeZone', timeZone);\nflow.set('f_dailySchedule', dailySchedule);\nflow.set('f_timeOffsetBeforeStart', timeOffsetBeforeStart);\nflow.set('f_timeOffsetBeforeEnd', timeOffsetBeforeEnd);\nflow.set('f_contentRmEvent', contentRmEvent);\nflow.set('f_preview', preview);\nflow.set('f_pastview', pastview);\nflow.set('f_sorted', sorted);\n\nflow.set('f_rooms', rooms);\n\n\n",
         "outputs": 1,
         "timeout": 0,
-        "noerr": 0,
+        "noerr": 1,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 230,
-        "y": 80,
+        "x": 250,
+        "y": 140,
         "wires": [
             []
         ],
         "icon": "node-red/cog.svg"
     },
     {
-        "id": "8cf4e11230254889",
+        "id": "b416e36624220443",
         "type": "inject",
-        "z": "09ebd12a5619dd1a",
-        "g": "3ba68f1a6aa151b2",
+        "z": "ff477416b0a79e72",
+        "g": "4f55c46d238ce1fe",
         "name": "",
         "props": [],
         "repeat": "",
@@ -484,20 +484,20 @@
         "once": true,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 95,
-        "y": 80,
+        "x": 115,
+        "y": 140,
         "wires": [
             [
-                "6a398abb89372323"
+                "afdcb9ab47522dc1"
             ]
         ],
         "l": false
     },
     {
-        "id": "5986fc8f424a73e1",
+        "id": "01c9bba14c3a5697",
         "type": "function",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "Rooms",
         "func": "let rooms = flow.get(\"f_rooms\");\n\nflow.set('f_startTime', Date.now());\nflow.set('f_nbRooms', rooms.length);\nflow.set('f_roomCounter', 0);\n\n// Send each room information as an individual msg\nfor (let j=0; j<rooms.length; j++) {\n    msg.roomInfo = rooms[j];\n    node.send(msg);\n}\n",
         "outputs": 1,
@@ -506,20 +506,20 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 183,
-        "y": 188,
+        "x": 203,
+        "y": 248,
         "wires": [
             [
-                "49bb7e58bf4f6980"
+                "34d790016980d585"
             ]
         ],
         "icon": "node-red/parser-json.svg"
     },
     {
-        "id": "7bb873de36318772",
+        "id": "283e975103416336",
         "type": "inject",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "Inject rooms",
         "props": [
             {
@@ -533,21 +533,21 @@
         "topic": "",
         "payload": "true",
         "payloadType": "bool",
-        "x": 88,
-        "y": 188,
+        "x": 108,
+        "y": 248,
         "wires": [
             [
-                "5986fc8f424a73e1"
+                "01c9bba14c3a5697"
             ]
         ],
         "icon": "node-red/timer.svg",
         "l": false
     },
     {
-        "id": "49bb7e58bf4f6980",
+        "id": "34d790016980d585",
         "type": "queue",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "",
         "input": "roomInfo",
         "inputType": "msg",
@@ -560,19 +560,19 @@
         "pourAmount": "1",
         "pourAmountType": "num",
         "maxUseMemory": "",
-        "x": 373,
-        "y": 188,
+        "x": 393,
+        "y": 248,
         "wires": [
             [
-                "0bf220aa6d63e511"
+                "e922a30640ddcfaf"
             ]
         ]
     },
     {
-        "id": "a737fbbe8387494c",
+        "id": "6174c751354a85d1",
         "type": "function",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "exit status",
         "func": "let roomInfo = msg.roomInfo;\nlet msgCorrect = false;\n\nswitch (msg.statusCode) {\n    case 200:\n        node.warn(`Successfully transmitted to the server. Process time = ${Date.now() - roomInfo.transmitTime} ms`);\n        msgCorrect = true;\n        break;\n    case 400:\n        node.error(\"Error 400: Bad HTTP Request\");\n        if (msg.payload.includes(\"write-access-denied\")) {\n            node.error(\"Error: Trying to write a Read Only object (analogInput)\");\n        }\n        break;\n    case 401:\n        node.error(\"Error 401: Can't connect to controller: Authorization error\");\n        break;\n    case 500:\n        node.error(\"Error 500: Server Error 500\");\n        break;\n    case 404:\n        node.error(\"Error 404\");\n        break;\n    case \"ETIMEDOUT\":\n        node.error(\"Error: Can't connect to controller: TimeOut\");\n        break;\n    case 501:\n        node.error(\"Error 501. Not recognized request methode. Server not capable of supporting it for any resource\")\n        break;\n    case \"ENOTFOUND\":\n        node.error(\"RequestError: no url found. Please correct the url\")\n}\n\n// Debug information\nlet nbRooms = flow.get('f_nbRooms');\nflow.set('f_roomCounter', flow.get('f_roomCounter') + 1);\nlet roomCounter = flow.get('f_roomCounter');\n\nif (roomCounter == nbRooms && msgCorrect) {\n    node.warn(`All rooms processed in ${(Date.now() - flow.get('f_startTime')) / 1000} s`);\n}\nelse if (!msgCorrect) {\n    node.error(\"Schedule configuration not properly processed\");\n}\n\nmsg.dequeue = true;\nreturn msg;\n",
         "outputs": 1,
@@ -581,35 +581,35 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1020,
-        "y": 200,
+        "x": 1040,
+        "y": 260,
         "wires": [
             []
         ]
     },
     {
-        "id": "9c6bfe4be386077c",
+        "id": "01fa8b2dda699a9f",
         "type": "complete",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "Operation complete",
         "scope": [
-            "a737fbbe8387494c"
+            "6174c751354a85d1"
         ],
         "uncaught": false,
-        "x": 153,
-        "y": 248,
+        "x": 173,
+        "y": 308,
         "wires": [
             [
-                "f2d02c98141e7690"
+                "18b36d20e025263e"
             ]
         ]
     },
     {
-        "id": "f2d02c98141e7690",
+        "id": "18b36d20e025263e",
         "type": "change",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "dequeue",
         "rules": [
             {
@@ -625,34 +625,34 @@
         "from": "",
         "to": "",
         "reg": false,
-        "x": 323,
-        "y": 248,
+        "x": 343,
+        "y": 308,
         "wires": [
             [
-                "49bb7e58bf4f6980"
+                "34d790016980d585"
             ]
         ]
     },
     {
-        "id": "a167e09664da0388",
+        "id": "6026bbd195e5b5ae",
         "type": "subflow:fde0a8cadc4afeb6",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "",
-        "x": 793,
-        "y": 248,
+        "x": 813,
+        "y": 308,
         "wires": [
             [
-                "a737fbbe8387494c",
-                "ac63c79ebdc1d1eb"
+                "6174c751354a85d1",
+                "63bf59c6b5d483e5"
             ]
         ]
     },
     {
-        "id": "373ab8fe0697880e",
+        "id": "0a998ed924b9543e",
         "type": "switch",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "BACnet Schedule Exist ?",
         "property": "payload",
         "propertyType": "msg",
@@ -669,29 +669,29 @@
         "checkall": "false",
         "repair": false,
         "outputs": 2,
-        "x": 773,
-        "y": 188,
+        "x": 793,
+        "y": 248,
         "wires": [
             [
-                "a167e09664da0388"
+                "6026bbd195e5b5ae"
             ],
             [
-                "a737fbbe8387494c"
+                "6174c751354a85d1"
             ]
         ]
     },
     {
-        "id": "0bf220aa6d63e511",
+        "id": "e922a30640ddcfaf",
         "type": "subflow:8f30be050e0d0566",
-        "z": "09ebd12a5619dd1a",
-        "g": "c7b93f3ea8b40cb1",
+        "z": "ff477416b0a79e72",
+        "g": "ff6d80bcde020c52",
         "name": "",
-        "x": 543,
-        "y": 188,
+        "x": 563,
+        "y": 248,
         "wires": [
             [
-                "373ab8fe0697880e",
-                "7ca4dba22f897c11"
+                "0a998ed924b9543e",
+                "57d168970caef7eb"
             ]
         ]
     }
