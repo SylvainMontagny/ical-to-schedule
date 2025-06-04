@@ -1,6 +1,28 @@
 # **Ical-To-Shedule**
 Ical-To-Shedules is a **Node-RED based application** that acts as a converter between Ical url and a Schedule object stored on your **Apex Distech controller**.
 
+- [Ical-To-Shedule](#Ical-To-Shedule)
+    - [**1. What is Ical-To-Schedule ?**](#1-what-is-ical-to-schedule-)
+        - [**key features](#key-features-)
+    - [**2. Prerequisites**](#2-prerequisites)
+        - [**2.1. Controller**](#21-controller)
+        - [**2.2. Node-RED setup**](#22-node-red-setup)
+    - [**3. Getting started**](#3-getting-started)
+        - [**Ical-To-Schedule Configuration**](#ical-to-schedule-configuration)
+    - [**4. Configuration**](#4-configuration)
+        - [**4.1. Controller Configuration :**](#41-controller-configuration-)
+        - [**4.2. timetable/Schedule Configuration**](#42-timetableschedule-configuration)
+        - [**4.3. Schedule values Configuration**](#43-schedule-values-configuration)
+        - [**4.4. Room Configuration**](#44-room-configuration)
+        - [**4.5. Binding configuration**](#45-binding-configuration)
+
+
+
+
+
+
+
+
 
 ## **1. What is Ical-To-Schedule ?**
 
@@ -116,11 +138,11 @@ If you use the link and bindings Addons you will need to configure more things :
 
 | parameter                     | can be used with link addon only | can be used with both addons |
 |-------------------------------|----------------------------------|------------------------------|
-| `generateScheduleAnalogValues`|                  [x]             |              [x]             |
-| `schedulesAnalogValuesOffset` |                  [ ]             |              [x]             |
-| `deviceInstanceOffset`        |                  [ ]             |              [x]             |
-| `deviceInstanceRange`         |                  [ ]             |              [x]             |
-| `deviceObjectInstanceNum`     |                  [ ]             |              [x]             |
+| `generateScheduleAnalogValues`|                  yes             |              yes             |
+| `schedulesAnalogValuesOffset` |                  no              |              yes             |
+| `deviceInstanceOffset`        |                  no              |              yes             |
+| `deviceInstanceRange`         |                  no              |              yes             |
+| `deviceObjectInstanceNum`     |                  no              |              yes             |
 
 
 
