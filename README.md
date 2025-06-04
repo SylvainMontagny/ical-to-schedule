@@ -31,16 +31,16 @@ Ical-To-Shedules is a **Node-RED based application** that acts as a converter be
 ### **key features :**
 
 - **Automatic updates :**
-    - [x] The Schedule value automatically update every hours, it can be configured to take more or less time to do an update.
-    - [x] Don't need to change the link every time the timetable have been modified.
+   - [x] The Schedule value automatically update every hours, it can be configured to take more or less time to do an update.
+   - [x] Don't need to change the link every time the timetable have been modified.
 
 - **Can be used with any timetable :**
-    - [x] Ical-To-Schedule can transform every timetable into Schedule BACnet object as long as the link is in Icalendar format.
-    - [ ] Cannot use any other format.
+   - [x] Ical-To-Schedule can transform every timetable into Schedule BACnet object as long as the link is in Icalendar format.
+   - [ ] Cannot use any other format.
 
 - **Can be used with LoRaBAC**
-    - If you want to link timetable events to LoRaWAN devices you can use the two addons.
-    - Of course you also need to use the [LoRaBAC](https://github.com/SylvainMontagny/LoRaBAC/tree/main) application. 
+   - [x] If you want to link timetable events to LoRaWAN devices you can use the two addons.
+   - [x] Of course you also need to use the [LoRaBAC](https://github.com/SylvainMontagny/LoRaBAC/tree/main) application. 
 
 ## **2. Prerequisites**
 
