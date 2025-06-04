@@ -156,3 +156,12 @@ const deviceInstanceRange = 10; // Instance range of analog values object of the
 const deviceObjectInstanceNum = 2; // Instance offset of the analog values object of the device you want to bind with the schedule configured in LoRaBAC
 
 ```
+
+## **5. Test With a generated Ical**
+To test the application you can use the Ical generator to create a test ical file. To do that you need to :
+
+1. Download the Ical generator from the Github.
+2. Generate the file.
+3. import the file in any application that provide an ical link (**ex.**Google).
+4. Copy the link inside the Ical-To-Schedule configuration
+5. Check if everything works as you want 
