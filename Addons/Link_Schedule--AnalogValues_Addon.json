@@ -2,9 +2,9 @@
     {
         "id": "1703a24e7ab537d9",
         "type": "debug",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "name": "Debug HTTP Read schedule",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -12,16 +12,16 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 780,
-        "y": 440,
+        "x": 800,
+        "y": 480,
         "wires": []
     },
     {
         "id": "72bf24bcd34f1e8a",
         "type": "debug",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "name": "Debug HTTP Write Analog Values",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -29,14 +29,14 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1180,
-        "y": 440,
+        "x": 1200,
+        "y": 480,
         "wires": []
     },
     {
         "id": "2ab8ce00905e9790",
         "type": "group",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "name": "link between schedules and Analog values ",
         "style": {
             "fill": "#ffefbf",
@@ -51,15 +51,15 @@
             "0ffe04934df1eb50",
             "e6fcfaf62a320f6e"
         ],
-        "x": 34,
-        "y": 339,
+        "x": 54,
+        "y": 379,
         "w": 1092,
         "h": 82
     },
     {
         "id": "5b5eabf2a4edd948",
         "type": "inject",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "g": "2ab8ce00905e9790",
         "name": "Link",
         "props": [
@@ -74,8 +74,8 @@
         "topic": "",
         "payload": "true",
         "payloadType": "bool",
-        "x": 95,
-        "y": 380,
+        "x": 115,
+        "y": 420,
         "wires": [
             [
                 "57edfdb9e94b913d"
@@ -86,18 +86,18 @@
     {
         "id": "57edfdb9e94b913d",
         "type": "function",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "g": "2ab8ce00905e9790",
         "name": "GET schedule present value",
-        "func": "\nlet rooms = flow.get(\"f_rooms\");\nlet property_references =[];\n\n// This resource gets the present value of the specified Schedule instance.\nfor (let room in rooms) {\n    let temp = '{ \"type\": \"Schedule\", \"instance\": ' + rooms[room][\"ScheduleID\"] + ', \"property\": \"presentValue\"}';\n    property_references.push(JSON.parse(temp));\n}\n\nreturn {\n          \"method\": \"POST\",\n          \"url\": \"https://\" + flow.get(\"f_controllerIP\") + \"/api/rest/v2/services/bacnet/local/objects/read-property-multiple\",\n          \"headers\": {\n            Authorization: flow.get(\"f_akey\"),\n            ContentType: \"application/json\"\n          },\n          \"payload\": {\n            \"encode\": \"text\",\n            \"property-references\": property_references\n          },\n          \"requestTimeout\": 5000,\n        }\n\n",
+        "func": "const controllerIP = flow.get(\"f_controllerIP\");\nconst authKey = flow.get(\"f_akey\");\nlet rooms = flow.get(\"f_rooms\");\nlet property_references =[];\n\n// This resource gets the present value of the specified Schedule instance.\nfor (let room in rooms) {\n    let temp = '{ \"type\": \"Schedule\", \"instance\": ' + rooms[room].scheduleID + ', \"property\": \"presentValue\"}';\n    property_references.push(JSON.parse(temp));\n}\n\nreturn {\n          \"method\": \"POST\",\n          \"url\": \"https://\" + controllerIP + \"/api/rest/v2/services/bacnet/local/objects/read-property-multiple\",\n          \"headers\": {\n            Authorization: authKey,\n            ContentType: \"application/json\"\n          },\n          \"payload\": {\n            \"encode\": \"text\",\n            \"property-references\": property_references\n          },\n          \"requestTimeout\": 5000,\n        }\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 280,
-        "y": 380,
+        "x": 300,
+        "y": 420,
         "wires": [
             [
                 "d64d7717616ae1b7"
@@ -107,22 +107,22 @@
     {
         "id": "d64d7717616ae1b7",
         "type": "http request",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "g": "2ab8ce00905e9790",
         "name": "HTTP REQUEST",
         "method": "use",
         "ret": "obj",
         "paytoqs": "ignore",
         "url": "",
-        "tls": "0a54777a4b254e96",
+        "tls": "2418490b3512393e",
         "persist": false,
         "proxy": "",
         "insecureHTTPParser": false,
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 530,
-        "y": 380,
+        "x": 550,
+        "y": 420,
         "wires": [
             [
                 "1703a24e7ab537d9",
@@ -133,18 +133,18 @@
     {
         "id": "0ffe04934df1eb50",
         "type": "function",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "g": "2ab8ce00905e9790",
         "name": "WRITE Analog Values",
-        "func": "let rooms = flow.get(\"f_rooms\");\nlet results = msg.payload.results;\nlet setpoint;\nlet schedulesAnalogValuesOffset = flow.get(\"f_schedulesAnalogValuesOffset\");; \nlet property_references = [];\n\n\nfor (let result in results) {\n  setpoint = results[result].value\n  let temp = '{ \"type\": \"analogValue\", \"instance\": ' + (schedulesAnalogValuesOffset + results[result].instance)  + ', \"property\": \"presentValue\", \"value\": ' + setpoint + ' }';\n  property_references.push(JSON.parse(temp));\n      \n}\n\n\n// Return HTTP Request\nreturn {\n  \"method\": \"POST\",\n  \"url\": \"https://\" + flow.get(\"f_controllerIP\") + \"/api/rest/v2/services/bacnet/local/objects/write-property-multiple\",\n  \"headers\": {\n    Authorization: flow.get(\"f_akey\"),\n    ContentType: \"application/json\"\n  },\n  \"payload\": {\n    \"encode\": \"text\",\n    \"property-references\": property_references\n  },\n  \"requestTimeout\": 5000,\n}",
+        "func": "const controllerIP = flow.get(\"f_controllerIP\");\nconst authKey = flow.get(\"f_akey\");\nconst rooms = flow.get(\"f_rooms\");\nconst results = msg.payload.results;\nconst schedulesAVOffset = flow.get(\"f_schedulesAVOffset\");; \nconst property_references = [];\nlet setpoint;\n\n\nfor (let result in results) {\n  setpoint = results[result].value\n  let temp = '{ \"type\": \"analogValue\", \"instance\": ' + (schedulesAVOffset + results[result].instance)  + ', \"property\": \"presentValue\", \"value\": ' + setpoint + ' }';\n  property_references.push(JSON.parse(temp));\n      \n}\n\n\n// Return HTTP Request\nreturn {\n  \"method\": \"POST\",\n  \"url\": \"https://\" + controllerIP + \"/api/rest/v2/services/bacnet/local/objects/write-property-multiple\",\n  \"headers\": {\n    Authorization: authKey,\n    ContentType: \"application/json\"\n  },\n  \"payload\": {\n    \"encode\": \"text\",\n    \"property-references\": property_references\n  },\n  \"requestTimeout\": 5000,\n}",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 780,
-        "y": 380,
+        "x": 800,
+        "y": 420,
         "wires": [
             [
                 "e6fcfaf62a320f6e"
@@ -154,22 +154,22 @@
     {
         "id": "e6fcfaf62a320f6e",
         "type": "http request",
-        "z": "09ebd12a5619dd1a",
+        "z": "ff477416b0a79e72",
         "g": "2ab8ce00905e9790",
         "name": "HTTP REQUEST",
         "method": "use",
-        "ret": "txt",
+        "ret": "obj",
         "paytoqs": "ignore",
         "url": "",
-        "tls": "0a54777a4b254e96",
+        "tls": "2418490b3512393e",
         "persist": false,
         "proxy": "",
         "insecureHTTPParser": false,
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1010,
-        "y": 380,
+        "x": 1030,
+        "y": 420,
         "wires": [
             [
                 "72bf24bcd34f1e8a"
@@ -177,7 +177,7 @@
         ]
     },
     {
-        "id": "0a54777a4b254e96",
+        "id": "2418490b3512393e",
         "type": "tls-config",
         "name": "",
         "cert": "",

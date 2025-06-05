@@ -1,9 +1,9 @@
-# **Ical-To-Shedule**
-Ical-To-Shedules is a **Node-RED based application** that acts as a converter between Ical url and a Schedule object stored on your **Apex Distech controller**.
+# **Ical-To-Schedule**
+Ical-To-Schedules is a **Node-RED based application** that acts as a converter between Ical url and a Schedule object stored on your **Apex Distech controller**.
 
-- [Ical-To-Shedule](#Ical-To-Shedule)
+- [**Ical-To-Schedule**](#Ical-To-Schedule)
     - [**1. What is Ical-To-Schedule ?**](#1-what-is-ical-to-schedule-)
-        - [**key features](#key-features-)
+        - [**key features**](#key-features-)
     - [**2. Prerequisites**](#2-prerequisites)
         - [**2.1. Controller**](#21-controller)
         - [**2.2. Node-RED setup**](#22-node-red-setup)
@@ -14,7 +14,9 @@ Ical-To-Shedules is a **Node-RED based application** that acts as a converter be
         - [**4.2. timetable/Schedule Configuration**](#42-timetableschedule-configuration)
         - [**4.3. Schedule values Configuration**](#43-schedule-values-configuration)
         - [**4.4. Room Configuration**](#44-room-configuration)
-        - [**4.5. Binding configuration**](#45-binding-configuration)
+        - [**4.5. Binding configuration**](#45-link-configuration)
+        - [**4.6. Binding configuration**](#46-binding-configuration)
+    - [**5. Test With a generated Ical**](#5-test-with-a-generated-ical)
 
 
 
@@ -100,11 +102,11 @@ const sorted = false;                       // Events are sorted in chronologica
 
 ```
 
-### **4.3. Schedule values Configuration**
+### **4.3. Schedule default values Configuration**
 This configuration set the values of the schedule :
 
-- **tempOccupied** : the value of the schedule when an event is in progress 
-- **tempUnOccupied** : the value of the schedule when no events are in progress
+- **defaultTempOccupied** : the default value of the schedule when an event is in progress 
+- **defaultTempUnOccupied** : the default value of the schedule when no events are in progress
 ```javascript
 const tempOccupied = 20;
 const tempUnOccupied = 17;
@@ -115,45 +117,64 @@ The rooms represent each of your timetables, it's an array of objects, these obj
 
 - **ScheduleID** : It's the instance number that will be given to the Schedule BACnet object.
 - **name** : It's the name that will be given to the Schedule BACnet object.
-- **device** : It's an array where you need to specify the number of every devices related to this timetable if you use the link and binding addons
+- **device** : It's an object of arrays, if you use the link and binding addons you need to specify the number of every devices related to this timetable for each device type 
+- **tempOccupied** : the value of the schedule when an event is in progress
+- **tempUnOccupied** : the value of the schedule when no events are in progress
 - **url** : It's the link to your timetable
 ```javascript
 let rooms = [
     {
         "ScheduleID": 0,
         "name": "@_ScheduleName",
-        "devices": [],
+        "devices": { "@_deviceType1" :[], "@_deviceType2" :[]},
+        "tempOccupied": defaultTempOccupied,
+        "tempUnOccupied": defaultTempUnOccupied,
         "url": "@_timetableLink",
     }
 ];
 ```
-### **4.5. Binding configuration**
-If you use the link and bindings Addons you will need to configure more things :
+### **4.5. Link Configuration**
+If you use the link Addon you will need to configure more things :
 
 - **generateScheduleAnalogValues** : Indicate if you want to create an anlog value related to the Schedule
 - **schedulesAnalogValuesOffset** : It's the instance number from which the schedule related analog values storage will start 
-- **deviceInstanceOffset** : The Device Offset configured in LoRaBAC
-- **deviceInstanceRange** : The Instance range of analog values object of the device configured in LoRaBAC
-- **deviceObjectInstanceNum** : The Instance offset of the analog values object of the device you want to bind with the schedule configured in LoRaBAC
-
-| parameter                     | can be used with link addon only | can be used with both addons |
-|-------------------------------|----------------------------------|------------------------------|
-| `generateScheduleAnalogValues`|                  yes             |              yes             |
-| `schedulesAnalogValuesOffset` |                  no              |              yes             |
-| `deviceInstanceOffset`        |                  no              |              yes             |
-| `deviceInstanceRange`         |                  no              |              yes             |
-| `deviceObjectInstanceNum`     |                  no              |              yes             |
-
-
-
-
 
 ```javascript
-const generateScheduleAnalogValues = false; //  If enabled will generate an analog value for each schedule
-const schedulesAnalogValuesOffset = 10000;  //  The starting instance of theses values
-const deviceInstanceOffset = 0; // Device Offset configured in LoRaBAC
-const deviceInstanceRange = 10; // Instance range of analog values object of the device configured in LoRaBAC
-const deviceObjectInstanceNum = 2; // Instance offset of the analog values object of the device you want to bind with the schedule configured in LoRaBAC
+const createScheduleAV = false; //  If enabled will generate an analog value for each schedule
+const schedulesAVOffset = 10000;  //  The starting instance of theses values
+
+```
+
+### **4.6. Binding Configuration**
+If you use the link and binding Addons you will need to configure a device list, this list is almost the same as the one used in LoRaBAC :
+
+- **maxDevNum** : The Device maximum number configured in LoRaBAC
+- **offsetAV** : The Device Offset for the analog values configured in LoRaBAC
+- **instanceRangeAV** : The Instance range of analog values object of the device configured in LoRaBAC
+- **instanceNum** : The Instance offset of the device analog values object that you want to bind with the schedule value
+
+```javascript
+const deviceList = {
+    "@_deviceType1" : {
+        "identity": {
+            "maxDevNum": 10 <===
+        },
+        "bacnet": {
+            "offsetAV": 0,  <===
+            "instanceRangeAV": 10,  <===  
+            "objects": {
+                "controllerSetpoint": {
+                    "instanceNum": 2,   <===
+                }
+            }
+        },
+    },
+    "@_deviceType2": {
+        "identity": {
+            "maxDevNum": 10
+        },
+
+        etc...
 
 ```
 
