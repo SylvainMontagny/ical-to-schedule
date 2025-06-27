@@ -4,7 +4,7 @@
         "type": "debug",
         "z": "ff477416b0a79e72",
         "name": "debug HTTP binding",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -13,7 +13,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 960,
-        "y": 660,
+        "y": 740,
         "wires": []
     },
     {
@@ -37,7 +37,7 @@
             "3eacf432c60b7a58"
         ],
         "x": 54,
-        "y": 520,
+        "y": 600,
         "w": 1012,
         "h": 121
     },
@@ -51,10 +51,10 @@
         "repeat": "",
         "crontab": "",
         "once": true,
-        "onceDelay": "5",
+        "onceDelay": "60",
         "topic": "",
         "x": 115,
-        "y": 600,
+        "y": 680,
         "wires": [
             [
                 "3c195491ad1bc1ed"
@@ -68,7 +68,7 @@
         "z": "ff477416b0a79e72",
         "g": "36cd858ee8b84b98",
         "name": "Binding between setpoint and schedule analog value",
-        "func": "const controllerIP = flow.get(\"f_controllerIP\");\nconst authKey = flow.get(\"f_akey\");\nconst rooms = flow.get(\"f_rooms\");\nlet deviceList = flow.get(\"f_deviceList\");\nvar setPoint;\nlet schedulesAVOffset = flow.get(\"f_schedulesAVOffset\");\nvar property_references = [];\n\nfor (var room in rooms) {\n    let scheduleID = rooms[room].scheduleID;\n    let roomName = rooms[room].scheduleName;\n    let deviceObject = rooms[room].devices;\n    for (let device in deviceObject) {\n        deviceObject[device].forEach( deviceNum => {\n            // Return HTTP Request\n            node.send({\n                \"request\":{\n                    \"method\": \"POST\",\n                    \"url\": \"https://\" + controllerIP + \"/api/rest/v2/services/events/bindings/\" + roomName + \"-\"+ device +\"-\" + deviceNum,\n                    \"headers\": {\n                      Authorization: authKey,\n                      ContentType: \"application/json\"\n                    },\n                     \"payload\": {\n                        \"key\": roomName + \"-\"+ device +\"-\" + deviceNum,\n                        \"sync-a-to-b\": {\n                            \"options\": {\n                                \"priorities\": true,\n                                \"write-priority\": 14,\n                                \"value\": false,\n                                \"out-of-service\": true\n                            },\n                            \"triggers\": {\n                                \"1\": {\n                                    \"key\": \"1\",\n                                    \"min-sync-time\": 0.0,\n                                    \"type\": \"OnChange\"\n                                }\n                            }\n                        },\n                        \"element-b\": \"/services/bacnet/local/objects/analog-values/\" + ((deviceNum * deviceList[device].bacnet.instanceRangeAV) + deviceList[device].bacnet.offsetAV + deviceList[device].bacnet.objects.controllerSetpoint.instanceNum),\n                        \"element-a\": \"/services/bacnet/local/objects/analog-values/\" + (scheduleID + schedulesAVOffset),\n                        \"initialize\": \"b-to-a\",\n                        \"type\": \"ControlElement\",\n                        \"sync-b-to-a\": {\n                            \"options\": {\n                                \"priorities\": true,\n                                \"write-priority\": 14,\n                                \"value\": false,\n                                \"out-of-service\": true\n                            },\n                            \"triggers\": {\n                                \"1\": {\n                                    \"key\": \"1\",\n                                    \"min-sync-time\": 0.0,\n                                    \"type\": \"OnChange\"\n                                }\n                            }\n                        }\n                    },\n                    \"requestTimeout\": 5000\n                }\n            });\n        });\n    }\n}   ",
+        "func": "const controllerIP = flow.get(\"f_controllerIP\");\nconst authKey = flow.get(\"f_akey\");\nconst rooms = flow.get(\"f_rooms\");\nlet deviceList = flow.get(\"f_deviceList\");\nvar setPoint;\nlet schedulesAVOffset = flow.get(\"f_schedulesAVOffset\");\nvar property_references = [];\n\nfor (var room in rooms) {\n    if (rooms[room]?.isActive){\n        let scheduleID = rooms[room].scheduleID;\n        let roomName = rooms[room].scheduleName;\n        let deviceObject = rooms[room].devices;\n        for (let device in deviceObject) {\n            deviceObject[device].forEach( deviceNum => {\n                // Return HTTP Request\n                node.send({\n                    \"request\":{\n                        \"method\": \"POST\",\n                        \"url\": `https://${controllerIP}/api/rest/v2/services/events/bindings/${scheduleID}_${roomName}_${device}_${deviceNum}`,\n                        \"headers\": {\n                          Authorization: authKey,\n                          ContentType: \"application/json\"\n                        },\n                         \"payload\": {\n                            \"key\": `${scheduleID}_${roomName}_${device}_${deviceNum}`,\n                            \"sync-a-to-b\": {\n                                \"options\": {\n                                    \"priorities\": true,\n                                    \"write-priority\": 14,\n                                    \"value\": false,\n                                    \"out-of-service\": true\n                                },\n                                \"triggers\": {\n                                    \"1\": {\n                                        \"key\": \"1\",\n                                        \"min-sync-time\": 0.0,\n                                        \"type\": \"OnChange\"\n                                    }\n                                }\n                            },\n                            \"element-b\": \"/services/bacnet/local/objects/analog-values/\" + ((deviceNum * deviceList[device].bacnet.instanceRangeAV) + deviceList[device].bacnet.offsetAV + deviceList[device].bacnet.objects.controllerSetpoint.instanceNum),\n                            \"element-a\": \"/services/bacnet/local/objects/analog-values/\" + (scheduleID + schedulesAVOffset),\n                            \"initialize\": \"b-to-a\",\n                            \"type\": \"ControlElement\",\n                            \"sync-b-to-a\": {\n                                \"options\": {\n                                    \"priorities\": true,\n                                    \"write-priority\": 14,\n                                    \"value\": false,\n                                    \"out-of-service\": true\n                                },\n                                \"triggers\": {\n                                    \"1\": {\n                                        \"key\": \"1\",\n                                        \"min-sync-time\": 0.0,\n                                        \"type\": \"OnChange\"\n                                    }\n                                }\n                            }\n                        },\n                        \"requestTimeout\": 5000\n                    }\n                });\n            });\n        }\n    }\n}   ",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -76,7 +76,7 @@
         "finalize": "",
         "libs": [],
         "x": 350,
-        "y": 600,
+        "y": 680,
         "wires": [
             [
                 "62e77a0aecf70eae"
@@ -90,7 +90,7 @@
         "g": "36cd858ee8b84b98",
         "name": "HTTP REQUEST",
         "method": "use",
-        "ret": "obj",
+        "ret": "txt",
         "paytoqs": "ignore",
         "url": "",
         "tls": "2418490b3512393e",
@@ -101,7 +101,7 @@
         "senderr": false,
         "headers": [],
         "x": 950,
-        "y": 600,
+        "y": 680,
         "wires": [
             [
                 "7ddffdaa1703591f"
@@ -126,7 +126,7 @@
         "pourAmountType": "num",
         "maxUseMemory": "",
         "x": 630,
-        "y": 600,
+        "y": 680,
         "wires": [
             [
                 "3eacf432c60b7a58"
@@ -144,7 +144,7 @@
         ],
         "uncaught": false,
         "x": 305,
-        "y": 561,
+        "y": 641,
         "wires": [
             [
                 "3c8e1323dff7acc1"
@@ -172,7 +172,7 @@
         "to": "",
         "reg": false,
         "x": 491,
-        "y": 561,
+        "y": 641,
         "wires": [
             [
                 "62e77a0aecf70eae"
@@ -193,7 +193,7 @@
         "finalize": "",
         "libs": [],
         "x": 770,
-        "y": 600,
+        "y": 680,
         "wires": [
             [
                 "7ff56057f93ed935"

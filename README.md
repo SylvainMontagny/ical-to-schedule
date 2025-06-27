@@ -16,28 +16,25 @@ Ical-To-Schedules is a **Node-RED based application** that acts as a converter b
         - [**4.4. Room Configuration**](#44-room-configuration)
         - [**4.5. Binding configuration**](#45-link-configuration)
         - [**4.6. Binding configuration**](#46-binding-configuration)
-    - [**5. Test With a generated Ical**](#5-test-with-a-generated-ical)
-
-
-
-
-
-
-
+    - [**5. Device list an room list checks**](#5-device-list-and-room-list-checks)
+    - [**6. Test With a generated Ical**](#6-test-with-a-generated-ical)
 
 
 ## **1. What is Ical-To-Schedule ?**
 
-**Ical-To-Schedule** is an open source application built on **Node-RED**. It allows you to integrate any timetable inside your controller with their Icalendar link.
+**Ical-To-Schedule** is an open source application built on **Node-RED**. It allows you to integrate any timetable inside your controller with their Icalendar url.
 
 ### **key features :**
 
 - **Automatic updates**
   * [x] The Schedule value automatically update every hours, it can be configured to take more or less time to do an update
-  * [x] Don't need to change the link every time the timetable have been modified
+  * [x] Don't need to change the url every time the timetable have been modified
 
+- **Automatic erases**
+  * [x] The Schedule that are not used anymore (not in the room list) will be automatically erased
+  
 - **Can be used with any timetable**
-  * [x] Ical-To-Schedule can transform every timetable into Schedule BACnet object as long as the link is in Icalendar format
+  * [x] Ical-To-Schedule can transform every timetable into Schedule BACnet object as long as the url is in Icalendar format
   * [ ] Cannot use any other format
 
 - **Can be used with LoRaBAC**
@@ -76,7 +73,7 @@ const controllerLogin = "@_ControllerLogin";  //Apex distech login
 const controllerPassword = "@_ControllerPassword";  //Apex distech password
 ```
 
-### **4.2. timetable/Schedule Configuration**
+### **4.2. Timetable/Schedule Configuration**
 For this part you can configure a lot of things :
 
 - **The time zone**
@@ -86,6 +83,8 @@ For this part you can configure a lot of things :
 - **The remove content array** : every event that contains a string of this array will be ignored and not added to the schedule
 - **preview** : the number of day to come from your timetable that you want to add to the schedule
 - **pastview** : it's the same as preview but for the past days
+- **scheduleRange** : it's the range in which the schedules can be created. A schedule created outside this range will genertate an error
+- **sorted** : it indicate if the events are sorted in chronological order, this helps to reduce algorithm complexity when enabled
 
 ```javascript
 const timeZone = 'Europe/Paris';
@@ -96,10 +95,10 @@ const contentRmEvent = ["TO_CONFIGURE"];
 
 const preview = 7;
 const pastview = 0;
-const sorted = false;                       // Events are sorted in chronological order.  
-                                            // This helps to reduce algorithm complexity 
-                                            // when enable
+const sorted = false;                       
 
+
+const scheduleRange = [0,100];
 ```
 
 ### **4.3. Schedule default values Configuration**
@@ -115,6 +114,7 @@ const tempUnOccupied = 17;
 ### **4.4. Room Configuration**
 The rooms represent each of your timetables, it's an array of objects, these objects have 4 properties :
 
+- **isActive** : It indicate if the room is active or not, if it's not active the schedule will not be created or even erased if it already exist.
 - **ScheduleID** : It's the instance number that will be given to the Schedule BACnet object.
 - **name** : It's the name that will be given to the Schedule BACnet object.
 - **device** : It's an object of arrays, if you use the link and binding addons you need to specify the number of every devices related to this timetable for each device type 
@@ -124,6 +124,7 @@ The rooms represent each of your timetables, it's an array of objects, these obj
 ```javascript
 let rooms = [
     {
+        "isActive": true,
         "ScheduleID": 0,
         "name": "@_ScheduleName",
         "devices": { "@_deviceType1" :[], "@_deviceType2" :[]},
@@ -177,8 +178,16 @@ const deviceList = {
         etc...
 
 ```
+## **5. Device list and room list checks**
 
-## **5. Test With a generated Ical**
+- [x] Check if each room have all the mandatory properties
+- [x] Check if each room have a different schedule instance
+- [x] Check if each device have all the mandatory properties
+- [x] Check if each device have a different name
+
+
+
+## **6. Test With a generated Ical**
 To test the application you can use the Ical generator to create a test ical file. To do that you need to :
 
 1. Download the Ical generator from the Github.
