@@ -16,7 +16,6 @@ Ical-To-Schedules is a **Node-RED based application** that acts as a converter b
         - [**4.4. Room Configuration**](#44-room-configuration)
         - [**4.5. Binding configuration**](#45-link-configuration)
         - [**4.6. Binding configuration**](#46-binding-configuration)
-    - [**5. Device list an room list checks**](#5-device-list-and-room-list-checks)
     - [**6. Test With a generated Ical**](#6-test-with-a-generated-ical)
 
 
@@ -78,8 +77,8 @@ For this part you can configure a lot of things :
 
 - **The time zone**
 - **the "daily schedule"** : it indicate if all the events of the day need to be regrouped as one or if all the events need to be added to the schedule separately
-- **The time offset before start** :  the time in minutes that you want to add before every event.
- - **The time offset before end** :  the time in minutes that you want to remove before the end every event.
+- **The default time offset before start** :  the default time in minutes that you want to add before every event.
+ - **The default time offset before end** :  the default time in minutes that you want to remove before the end every event.
 - **The remove content array** : every event that contains a string of this array will be ignored and not added to the schedule
 - **preview** : the number of day to come from your timetable that you want to add to the schedule
 - **pastview** : it's the same as preview but for the past days
@@ -89,8 +88,8 @@ For this part you can configure a lot of things :
 ```javascript
 const timeZone = 'Europe/Paris';
 const dailySchedule = false;                 // Group events in 1 event/day
-const timeOffsetBeforeStart = 0;            // in min
-const timeOffsetBeforeEnd = 0;              // in min
+const defaultTimeOffsetBeforeStart = 0;            // in min
+const defaultTimeOffsetBeforeEnd = 0;              // in min
 const contentRmEvent = ["TO_CONFIGURE"];   
 
 const preview = 7;
@@ -120,6 +119,8 @@ The rooms represent each of your timetables, it's an array of objects, these obj
 - **device** : It's an object of arrays, if you use the link and binding addons you need to specify the number of every devices related to this timetable for each device type 
 - **tempOccupied** : the value of the schedule when an event is in progress
 - **tempUnOccupied** : the value of the schedule when no events are in progress
+- **timeOffsetBeforeStart** :  the time in minutes that you want to add before every event.
+- **timeOffsetBeforeEnd** :  the time in minutes that you want to remove before the end every event.
 - **url** : It's the link to your timetable
 ```javascript
 let rooms = [
@@ -130,6 +131,8 @@ let rooms = [
         "devices": { "@_deviceType1" :[], "@_deviceType2" :[]},
         "tempOccupied": defaultTempOccupied,
         "tempUnOccupied": defaultTempUnOccupied,
+        "timeOffsetBeforeStart" : defaultTimeOffsetBeforeStart,
+        "timeOffsetBeforeEnd" : defaultTimeOffsetBeforeEnd,
         "url": "@_timetableLink",
     }
 ];
