@@ -1,11 +1,11 @@
 # Ical Generator 
-**Ical Generator** is an html file that allow us to create test Ical files to test the Ical-To-Schedule application. The Ical generated will alternate between events and times without anything.
+**Ical Generator** is a html file that generate an ics file (ical calendar) with periodic event. This application is used for testing purpose to create BACnet schedule envent.
 
-## **How to use Ical Generator ?**
-When you run the html file you arrive on a page with 4 configurable field and a button to generate the Ical file :
+## How to use Ical Generator ?
+1. Launch the Ical_Generator.html file.
+2. Input your settings.
+3. Generate ics file
 
-- The first field is the duration time of the event in minutes.
-- The second field is the duration time of the intervals between events in minutes
-- the third field is the start date of theses events
-- the last field is the end date of theses events
+## Know limitation 
+The start time can't be after the stop time. For example, you can't create a periodic event from 10pm to 1am the next day.
 
