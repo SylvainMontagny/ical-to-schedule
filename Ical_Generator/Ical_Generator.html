@@ -24,11 +24,11 @@
 
     .container {
       background-color: white;
-      padding: 30px;
+      padding: 60px;
       border-radius: 15px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 40px rgba(0,0,0,0.1);
       text-align: center;
-      width: 300px;
+      width: 400px;
     }
 
     label {
@@ -83,7 +83,7 @@
 </div>
   <script>
       document.getElementById('startDateTimeID').value = toDatetimeLocal(new Date());
-      document.getElementById('endDateTimeID').value = toDatetimeLocal(new Date(new Date().getTime() + 24 * 60 * 60 * 1000));
+      document.getElementById('endDateTimeID').value = toDatetimeLocal(new Date(new Date().getTime() + 30 * 60 * 60 * 1000));
 
     function toDatetimeLocal(date) {
   const pad = n => n.toString().padStart(2, "0");
@@ -126,13 +126,19 @@ function pad(n) {
         document.getElementById('resultID').innerText = "End can't be before start.";
         return;
       }   
+
+      console.log(startDateTime.getHours(), endDateTime.getHours());
+      if(startDateTime.getHours() >= endDateTime.getHours() ){
+        document.getElementById('resultID').innerText = "End hour must be after start hour.";
+        return;
+      }
       
-      const startHour = startDateTime.getHours().toString().padStart(2, "0");
-      const endHour = endDateTime.getHours().toString().padStart(2, "0");
+      const startHourStr = startDateTime.getHours().toString().padStart(2, "0");
+      const endHourStr = endDateTime.getHours().toString().padStart(2, "0");
       
       console.log("startDateTimeStr", startDateTimeStr, "endDateTimeStr", endDateTimeStr);
       console.log("startDateTime",startDateTime,  "endDateTime", endDateTime);  
-      console.log("startHour",startHour, "endHour",endHour);
+      console.log("startHourStr",startHourStr, "endHourStr",endHourStr);
 
       const now = new Date();
 	    startDateTime.setHours(23, 59, 59, 999);
@@ -145,25 +151,22 @@ PRODID:-// Occupency duration : ${occupancyDuration} minutes, Intervals : ${inte
 `;
 
       for (let d = new Date(startDateTimeStr); d <= endDateTime; d.setDate(d.getDate() + 1)) {
-        let current = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), startHour, 0));
-        const dayEnd = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), endHour, 0));
+        let current = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), startHourStr, 0));
+        const dayEnd = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), endHourStr, 0));
 
-        console.log("current", current, "dayEnd", dayEnd);
+        //console.log("current", current, "dayEnd", dayEnd);
 
         while (current < dayEnd) {
           const start = new Date(current);
           current.setMinutes(current.getMinutes() + occupancyDuration);
           const endEvent = new Date(current);
 
-          // Ajouter uniquement les activités
           calendar += `BEGIN:VEVENT
 SUMMARY:Occupied
 DTSTART:${formatDate(start)}
 DTEND:${formatDate(endEvent)}
 END:VEVENT
 `;
-
-          // Sauter la pause
           current.setMinutes(current.getMinutes() + intervalDuration);
         }
       }
@@ -173,7 +176,7 @@ END:VEVENT
       const blob = new Blob([calendar], { type: 'text/calendar;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'activites.ics';
+      link.download = occupancyDuration.toString() + 'mins-' + intervalDuration.toString() + 'mins - from ' + startHourStr + 'h to ' + endHourStr + 'h.ics';  // 'activites.ics';
       link.click();
     }
   </script>
