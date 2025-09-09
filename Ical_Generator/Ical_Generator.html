@@ -13,6 +13,14 @@
       height: 100vh;
       margin: 0;
     }
+    p {
+      margin-top: 15px;
+      margin-bottom: 10px;
+      font-size: 1em;
+      min-height: 1.5em;
+      font-weight: bold;
+      color: red;
+    }
 
     .container {
       background-color: white;
@@ -35,6 +43,7 @@
       padding: 8px;
       border-radius: 5px;
       border: 1px solid #ccc;
+      text-align: center;
     }
 
     button {
@@ -54,24 +63,39 @@
 </head>
 <body>
 <div class="container">
-  <h1>iCalendar Generator</h1>
+  <h1>Periodic event Generator</h1>
 
-  <label for="interval">Occupancy time (minutes) :</label>
-  <input type="number" id="occupancy" value="30" min="1"><br><br>
+  <label for="occupancyDurationID">Room occupency duration (minutes) :</label>
+  <input type="number" id="occupancyDurationID" value="30" min="1"><br><br>
   
-  <label for="interval">interval time (minutes) :</label>
-  <input type="number" id="interval" value="30" min="1"><br><br>
+  <label for="intervalDurationID">Intervals duration (minutes) :</label>
+  <input type="number" id="intervalDurationID" value="30" min="1"><br><br>
 
-  <label for="endDate">starting date :</label>
-  <input type="date" id="startDate"><br><br>
+  <label for="startDateTimeID">Start of the periodic event :</label>
+  <input type="datetime-local" id="startDateTimeID"><br><br>
 
-  <label for="endDate">end date :</label>
-  <input type="date" id="endDate"><br><br>
+  <label for="endDateTimeID">End of the periodic event :</label>
+  <input type="datetime-local" id="endDateTimeID"><br><br>
   
+  <p id="resultID" style="color: red; font-weight: bold; min-height: 1.5em;"></p>
+
   <button onclick="generateICS()">Generate .ics file</button>
 </div>
   <script>
-    function pad(n) {
+      document.getElementById('startDateTimeID').value = toDatetimeLocal(new Date());
+      document.getElementById('endDateTimeID').value = toDatetimeLocal(new Date(new Date().getTime() + 24 * 60 * 60 * 1000));
+
+    function toDatetimeLocal(date) {
+  const pad = n => n.toString().padStart(2, "0");
+  return date.getFullYear() + "-" +
+         pad(date.getMonth() + 1) + "-" +
+         pad(date.getDate()) + "T" +
+         pad(date.getHours()) + ":" +
+         pad(date.getMinutes());
+}
+    
+
+function pad(n) {
       return n < 10 ? '0' + n : n;
     }
 
@@ -85,37 +109,50 @@
     }
 
     function generateICS() {
-      const occupancy = parseInt(document.getElementById('occupancy').value);
-      const interval = parseInt(document.getElementById('interval').value);
-      const startDateInput = document.getElementById('startDate').value;
-      const endDateInput = document.getElementById('endDate').value;
+      const occupancyDuration = parseInt(document.getElementById('occupancyDurationID').value);
+      const intervalDuration = parseInt(document.getElementById('intervalDurationID').value);
+      const startDateTimeStr = document.getElementById('startDateTimeID').value;
+      const endDateTimeStr = document.getElementById('endDateTimeID').value;
 
-      if (!endDateInput) {
-        alert("Veuillez sélectionner une date de fin.");
+      if(!startDateTimeStr || !endDateTimeStr ){
+        document.getElementById('resultID').innerText = "Missing start or end time.";
         return;
       }
+      
+      const startDateTime = new Date(startDateTimeStr); 
+      const endDateTime =  new Date(endDateTimeStr);
 
-      const startHour = 5;
-      const endHour = 19;
+      if(startDateTime > endDateTime ){
+        document.getElementById('resultID').innerText = "End can't be before start.";
+        return;
+      }   
+      
+      const startHour = startDateTime.getHours().toString().padStart(2, "0");
+      const endHour = endDateTime.getHours().toString().padStart(2, "0");
+      
+      console.log("startDateTimeStr", startDateTimeStr, "endDateTimeStr", endDateTimeStr);
+      console.log("startDateTime",startDateTime,  "endDateTime", endDateTime);  
+      console.log("startHour",startHour, "endHour",endHour);
+
       const now = new Date();
-      const startDate = new Date(startDateInput);
-	  startDate.setHours(23, 59, 59, 999);
-      const endDate = new Date(endDateInput);
-      endDate.setHours(23, 59, 59, 999); // inclure toute la journée
+	    startDateTime.setHours(23, 59, 59, 999);
+      endDateTime.setHours(23, 59, 59, 999); 
 
       let calendar = `BEGIN:VCALENDAR
 VERSION:2.0
 CALSCALE:GREGORIAN
-PRODID:-//Activités toutes les ${interval} minutes//FR
+PRODID:-// Occupency duration : ${occupancyDuration} minutes, Intervals : ${intervalDuration} minutes
 `;
 
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      for (let d = new Date(startDateTimeStr); d <= endDateTime; d.setDate(d.getDate() + 1)) {
         let current = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), startHour, 0));
         const dayEnd = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), endHour, 0));
 
+        console.log("current", current, "dayEnd", dayEnd);
+
         while (current < dayEnd) {
           const start = new Date(current);
-          current.setMinutes(current.getMinutes() + occupancy);
+          current.setMinutes(current.getMinutes() + occupancyDuration);
           const endEvent = new Date(current);
 
           // Ajouter uniquement les activités
@@ -127,7 +164,7 @@ END:VEVENT
 `;
 
           // Sauter la pause
-          current.setMinutes(current.getMinutes() + interval);
+          current.setMinutes(current.getMinutes() + intervalDuration);
         }
       }
 
