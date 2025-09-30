@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <title>iCalendar Generator</title>
@@ -13,6 +14,7 @@
       height: 100vh;
       margin: 0;
     }
+
     p {
       margin-top: 15px;
       margin-bottom: 10px;
@@ -26,7 +28,7 @@
       background-color: white;
       padding: 60px;
       border-radius: 15px;
-      box-shadow: 0 0 40px rgba(0,0,0,0.1);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
       text-align: center;
       width: 400px;
     }
@@ -61,41 +63,43 @@
     }
   </style>
 </head>
+
 <body>
-<div class="container">
-  <h1>Periodic event Generator</h1>
+  <div class="container">
+    <h1>Periodic event Generator</h1>
 
-  <label for="occupancyDurationID">Room occupency duration (minutes) :</label>
-  <input type="number" id="occupancyDurationID" value="30" min="1"><br><br>
-  
-  <label for="intervalDurationID">Intervals duration (minutes) :</label>
-  <input type="number" id="intervalDurationID" value="30" min="1"><br><br>
+    <label for="occupancyDurationID">Room occupency duration (minutes) :</label>
+    <input type="number" id="occupancyDurationID" value="30" min="1"><br><br>
 
-  <label for="startDateTimeID">Start of the periodic event :</label>
-  <input type="datetime-local" id="startDateTimeID"><br><br>
+    <label for="intervalDurationID">Intervals duration (minutes) :</label>
+    <input type="number" id="intervalDurationID" value="30" min="1"><br><br>
 
-  <label for="endDateTimeID">End of the periodic event :</label>
-  <input type="datetime-local" id="endDateTimeID"><br><br>
-  
-  <p id="resultID" style="color: red; font-weight: bold; min-height: 1.5em;"></p>
+    <label for="startDateTimeID">Start of the periodic event :</label>
+    <input type="datetime-local" id="startDateTimeID"><br><br>
 
-  <button onclick="generateICS()">Generate .ics file</button>
-</div>
+    <label for="endDateTimeID">End of the periodic event :</label>
+    <input type="datetime-local" id="endDateTimeID"><br><br>
+
+    <p id="resultID" style="color: red; font-weight: bold; min-height: 1.5em;"></p>
+
+    <button onclick="generateICS()">Generate .ics file</button>
+  </div>
   <script>
-      document.getElementById('startDateTimeID').value = toDatetimeLocal(new Date());
-      document.getElementById('endDateTimeID').value = toDatetimeLocal(new Date(new Date().getTime() + 30 * 60 * 60 * 1000));
+    // Set default start and end date-times
+    document.getElementById('startDateTimeID').value = toDatetimeLocal(new Date());
+    document.getElementById('endDateTimeID').value = toDatetimeLocal(new Date(new Date().getTime() + 30 * 60 * 60 * 1000));
 
     function toDatetimeLocal(date) {
-  const pad = n => n.toString().padStart(2, "0");
-  return date.getFullYear() + "-" +
-         pad(date.getMonth() + 1) + "-" +
-         pad(date.getDate()) + "T" +
-         pad(date.getHours()) + ":" +
-         pad(date.getMinutes());
-}
-    
+      const pad = n => n.toString().padStart(2, "0");
+      return date.getFullYear() + "-" +
+        pad(date.getMonth() + 1) + "-" +
+        pad(date.getDate()) + "T" +
+        pad(date.getHours()) + ":" +
+        pad(date.getMinutes());
+    }
 
-function pad(n) {
+
+    function pad(n) {
       return n < 10 ? '0' + n : n;
     }
 
@@ -105,7 +109,7 @@ function pad(n) {
         pad(date.getUTCDate()) + 'T' +
         pad(date.getUTCHours()) +
         pad(date.getUTCMinutes()) +
-        '00Z';
+        '00';
     }
 
     function generateICS() {
@@ -114,35 +118,35 @@ function pad(n) {
       const startDateTimeStr = document.getElementById('startDateTimeID').value;
       const endDateTimeStr = document.getElementById('endDateTimeID').value;
 
-      if(!startDateTimeStr || !endDateTimeStr ){
+      if (!startDateTimeStr || !endDateTimeStr) {
         document.getElementById('resultID').innerText = "Missing start or end time.";
         return;
       }
-      
-      const startDateTime = new Date(startDateTimeStr); 
-      const endDateTime =  new Date(endDateTimeStr);
 
-      if(startDateTime > endDateTime ){
+      const startDateTime = new Date(startDateTimeStr);
+      const endDateTime = new Date(endDateTimeStr);
+
+      if (startDateTime > endDateTime) {
         document.getElementById('resultID').innerText = "End can't be before start.";
         return;
-      }   
+      }
 
       console.log(startDateTime.getHours(), endDateTime.getHours());
-      if(startDateTime.getHours() >= endDateTime.getHours() ){
+      if (startDateTime.getHours() >= endDateTime.getHours()) {
         document.getElementById('resultID').innerText = "End hour must be after start hour.";
         return;
       }
-      
+
       const startHourStr = startDateTime.getHours().toString().padStart(2, "0");
       const endHourStr = endDateTime.getHours().toString().padStart(2, "0");
-      
+
       console.log("startDateTimeStr", startDateTimeStr, "endDateTimeStr", endDateTimeStr);
-      console.log("startDateTime",startDateTime,  "endDateTime", endDateTime);  
-      console.log("startHourStr",startHourStr, "endHourStr",endHourStr);
+      console.log("startDateTime", startDateTime, "endDateTime", endDateTime);
+      console.log("startHourStr", startHourStr, "endHourStr", endHourStr);
 
       const now = new Date();
-	    startDateTime.setHours(23, 59, 59, 999);
-      endDateTime.setHours(23, 59, 59, 999); 
+      startDateTime.setHours(23, 59, 59, 999);
+      endDateTime.setHours(23, 59, 59, 999);
 
       let calendar = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -181,4 +185,5 @@ END:VEVENT
     }
   </script>
 </body>
+
 </html>
