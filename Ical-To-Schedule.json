@@ -7,8 +7,8 @@
         "category": "",
         "in": [
             {
-                "x": 560,
-                "y": 200,
+                "x": 100,
+                "y": 140,
                 "wires": [
                     {
                         "id": "bf40ae8c34bf0ed8"
@@ -26,7 +26,7 @@
         "type": "function",
         "z": "06caa6a694a2292a",
         "g": "19da49a7614e0f08",
-        "name": "GET schedule value",
+        "name": "Get schedule value",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet property_references = [];\n\nfunction getSchedulePresentValue() {\n  node.warn(\"Updating AVschedule...\");\n  for (let room in rooms) {\n    if (rooms[room].isActive) {\n      let temp = '{ \"type\": \"Schedule\", \"instance\": ' + rooms[room].scheduleID + ', \"property\": \"presentValue\"}';\n      property_references.push(JSON.parse(temp));\n    }\n  }\n  node.send({\n    method: \"POST\",\n    url: `https://${icalToScheduleConf.controllerIPAddress}/api/rest/v2/services/bacnet/local/objects/read-property-multiple`,\n    headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n    payload: {\n      \"encode\": \"text\",\n      \"property-references\": property_references\n    },\n    icalToScheduleConf: icalToScheduleConf,\n    rooms: rooms\n  });\n}\n\nsetTimeout(() => {\n  getSchedulePresentValue();\n  setInterval(getSchedulePresentValue, icalToScheduleConf.timeBetweenScheduleAVUpdate * 1000);\n}, 3000);\n\n\n\n",
         "outputs": 1,
         "timeout": 0,
@@ -34,8 +34,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 740,
-        "y": 200,
+        "x": 270,
+        "y": 140,
         "wires": [
             [
                 "5733e23c8187a3b9"
@@ -52,15 +52,15 @@
         "ret": "obj",
         "paytoqs": "ignore",
         "url": "",
-        "tls": "2418490b3512393e",
+        "tls": "4137b33b296425ab",
         "persist": false,
         "proxy": "",
         "insecureHTTPParser": false,
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 930,
-        "y": 200,
+        "x": 450,
+        "y": 140,
         "wires": [
             [
                 "41353860b523b7ca"
@@ -72,7 +72,7 @@
         "type": "function",
         "z": "06caa6a694a2292a",
         "g": "19da49a7614e0f08",
-        "name": "WRITE Analog Values",
+        "name": "Write scheduleAV",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet property_references = [];\nlet results = msg.payload.results;\nlet setpoint;\n\n\nfor (let i = 0; i < results.length; i++) {\n  setpoint = results[i].value;\n  if (!setpoint || setpoint.includes(\"Null\")) {\n    node.warn(`Schedule ${results[i].instance} returns 0 or NULL`);\n  } else if (setpoint.includes(\"Unknown Object\")){\n    node.warn(`Schedule ${results[i].instance} doesn't exist`);\n  }else{\n  let temp = '{ \"type\": \"analogValue\", \"instance\": ' + (icalToScheduleConf.scheduleAVInstanceOffset + results[i].instance) + ', \"property\": \"presentValue\", \"value\": ' + setpoint + ' }';\n  property_references.push(JSON.parse(temp));\n  }\n}\n\n\nreturn {\n  method: \"POST\",\n  url: `https://${icalToScheduleConf.controllerIPAddress}/api/rest/v2/services/bacnet/local/objects/write-property-multiple`,\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    \"encode\": \"text\",\n    \"property-references\": property_references\n  }\n}",
         "outputs": 1,
         "timeout": 0,
@@ -80,8 +80,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1120,
-        "y": 200,
+        "x": 630,
+        "y": 140,
         "wires": [
             [
                 "73a71f9065db5d47"
@@ -98,38 +98,18 @@
         "ret": "obj",
         "paytoqs": "ignore",
         "url": "",
-        "tls": "2418490b3512393e",
+        "tls": "4137b33b296425ab",
         "persist": false,
         "proxy": "",
         "insecureHTTPParser": false,
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1310,
-        "y": 200,
+        "x": 810,
+        "y": 140,
         "wires": [
-            [
-                "4f172bafe19eed41"
-            ]
+            []
         ]
-    },
-    {
-        "id": "4f172bafe19eed41",
-        "type": "debug",
-        "z": "06caa6a694a2292a",
-        "g": "19da49a7614e0f08",
-        "name": "debug 7",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1460,
-        "y": 200,
-        "wires": []
     },
     {
         "id": "19da49a7614e0f08",
@@ -137,21 +117,21 @@
         "z": "06caa6a694a2292a",
         "name": "Link schedules and  scheduleAV",
         "style": {
-            "fill": "#ffbfbf",
+            "fill": "#ffefbf",
             "label": true,
             "color": "#000000",
-            "stroke": "#ffC000"
+            "stroke": "#d1d1d1",
+            "label-position": "n"
         },
         "nodes": [
             "bf40ae8c34bf0ed8",
             "5733e23c8187a3b9",
             "41353860b523b7ca",
-            "73a71f9065db5d47",
-            "4f172bafe19eed41"
+            "73a71f9065db5d47"
         ],
-        "x": 614,
-        "y": 159,
-        "w": 952,
+        "x": 154,
+        "y": 99,
+        "w": 732,
         "h": 82
     },
     {
@@ -163,7 +143,7 @@
         "in": [
             {
                 "x": 60,
-                "y": 140,
+                "y": 100,
                 "wires": [
                     {
                         "id": "8897ec7dc936e9c1"
@@ -180,6 +160,7 @@
         "id": "8897ec7dc936e9c1",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
+        "g": "e37ae50a2f8ed5ef",
         "name": "Delete schedule",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet requests = [];\nlet id = 1;\n\n// Delete all Schedule from range\nfor (let inst = icalToScheduleConf.scheduleInstanceRange[0]; inst <= icalToScheduleConf.scheduleInstanceRange[1]; inst++) {\n  {\n    requests.push({\n      id: String(id),\n      method: \"DELETE\",\n      url: `/api/rest/v2/services/bacnet/local/objects/schedules/${inst}`\n    });\n    id++\n  }\n}\n\nreturn {\n  method: \"POST\",\n  url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    requests: requests\n  },\n  icalToScheduleConf: icalToScheduleConf,\n  rooms: rooms\n}\n",
         "outputs": 1,
@@ -189,7 +170,7 @@
         "finalize": "",
         "libs": [],
         "x": 220,
-        "y": 140,
+        "y": 100,
         "wires": [
             [
                 "0a8636783b08fe3e"
@@ -200,128 +181,7 @@
         "id": "0a8636783b08fe3e",
         "type": "http request",
         "z": "5dbb742ee17c0ff3",
-        "name": "HTTP",
-        "method": "use",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "4137b33b296425ab",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 390,
-        "y": 140,
-        "wires": [
-            [
-                "c1ce821a513d0e32",
-                "2f1b85af7c083c81"
-            ]
-        ]
-    },
-    {
-        "id": "c1ce821a513d0e32",
-        "type": "debug",
-        "z": "5dbb742ee17c0ff3",
-        "name": "Del schedule",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 590,
-        "y": 80,
-        "wires": []
-    },
-    {
-        "id": "2f1b85af7c083c81",
-        "type": "function",
-        "z": "5dbb742ee17c0ff3",
-        "name": "Create Schedule",
-        "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet requests = [];\nlet id = 1;\n\nif (icalToScheduleConf.createScheduleFromURL) {\n  node.warn(\"Creating Schedule for each active room...\");\n\n  for (let i = 0; i < rooms.length; i++) {\n    if (rooms[i].isActive) {\n      requests.push({\n        id: String(id),\n        method: \"POST\",\n        url: \"/api/rest/v2/services/bacnet/local/objects/add\",\n        body: {\n          \"object-type\": \"schedule\",\n          \"instance-number\": rooms[i].scheduleID,\n          \"name\": rooms[i].scheduleName\n        }\n      });\n\n      id++;\n    }\n  }\n}\n\n\nreturn {\n  method: \"POST\",\n  url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    requests: requests\n  },\n  icalToScheduleConf: icalToScheduleConf,\n  rooms: rooms\n}\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 570,
-        "y": 140,
-        "wires": [
-            [
-                "a13745a451e56be2",
-                "eb3ea11c5bbfc50e"
-            ]
-        ]
-    },
-    {
-        "id": "eb3ea11c5bbfc50e",
-        "type": "http request",
-        "z": "5dbb742ee17c0ff3",
-        "name": "HTTP",
-        "method": "use",
-        "ret": "obj",
-        "paytoqs": "ignore",
-        "url": "",
-        "tls": "4137b33b296425ab",
-        "persist": false,
-        "proxy": "",
-        "insecureHTTPParser": false,
-        "authType": "",
-        "senderr": false,
-        "headers": [],
-        "x": 750,
-        "y": 140,
-        "wires": [
-            [
-                "d9b3b51c25a2a938",
-                "730838ec638e822c"
-            ]
-        ]
-    },
-    {
-        "id": "d9b3b51c25a2a938",
-        "type": "debug",
-        "z": "5dbb742ee17c0ff3",
-        "name": "schedule",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 940,
-        "y": 80,
-        "wires": []
-    },
-    {
-        "id": "a13745a451e56be2",
-        "type": "debug",
-        "z": "5dbb742ee17c0ff3",
-        "name": "schedule",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 760,
-        "y": 80,
-        "wires": []
-    },
-    {
-        "id": "2ad6d8f95fdc3201",
-        "type": "http request",
-        "z": "5dbb742ee17c0ff3",
+        "g": "e37ae50a2f8ed5ef",
         "name": "HTTP",
         "method": "use",
         "ret": "obj",
@@ -335,7 +195,78 @@
         "senderr": false,
         "headers": [],
         "x": 410,
-        "y": 200,
+        "y": 100,
+        "wires": [
+            [
+                "2f1b85af7c083c81"
+            ]
+        ]
+    },
+    {
+        "id": "2f1b85af7c083c81",
+        "type": "function",
+        "z": "5dbb742ee17c0ff3",
+        "g": "e37ae50a2f8ed5ef",
+        "name": "Create Schedule",
+        "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet requests = [];\nlet id = 1;\n\nif (icalToScheduleConf.createScheduleFromURL) {\n  node.warn(\"Creating Schedule for each active room...\");\n\n  for (let i = 0; i < rooms.length; i++) {\n    if (rooms[i].isActive) {\n      requests.push({\n        id: String(id),\n        method: \"POST\",\n        url: \"/api/rest/v2/services/bacnet/local/objects/add\",\n        body: {\n          \"object-type\": \"schedule\",\n          \"instance-number\": rooms[i].scheduleID,\n          \"name\": rooms[i].scheduleName\n        }\n      });\n\n      id++;\n    }\n  }\n}\n\n\nreturn {\n  method: \"POST\",\n  url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    requests: requests\n  },\n  icalToScheduleConf: icalToScheduleConf,\n  rooms: rooms\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 590,
+        "y": 100,
+        "wires": [
+            [
+                "eb3ea11c5bbfc50e"
+            ]
+        ]
+    },
+    {
+        "id": "eb3ea11c5bbfc50e",
+        "type": "http request",
+        "z": "5dbb742ee17c0ff3",
+        "g": "e37ae50a2f8ed5ef",
+        "name": "HTTP",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "4137b33b296425ab",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 770,
+        "y": 100,
+        "wires": [
+            [
+                "730838ec638e822c"
+            ]
+        ]
+    },
+    {
+        "id": "2ad6d8f95fdc3201",
+        "type": "http request",
+        "z": "5dbb742ee17c0ff3",
+        "g": "f094d9620987bdc4",
+        "name": "HTTP",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "4137b33b296425ab",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 410,
+        "y": 220,
         "wires": [
             [
                 "fd9b07ee4ec18b9b"
@@ -346,6 +277,7 @@
         "id": "ac29e1b761b56299",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
+        "g": "f094d9620987bdc4",
         "name": "Delete scheduleAV",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet requests = [];\nlet id = 1;\n\n// Delete all scheduleAV from range\nfor (let inst = icalToScheduleConf.scheduleInstanceRange[0]; inst <= icalToScheduleConf.scheduleInstanceRange[1]; inst++) {\n  {\n    requests.push({\n      id: String(id),\n      method: \"DELETE\",\n      url: `/api/rest/v2/services/bacnet/local/objects/analog-values/${inst + icalToScheduleConf.scheduleAVInstanceOffset}`\n    });\n\n    id++\n  }\n}\n\nreturn {\n  method: \"POST\",\n  url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    requests: requests\n  },\n  icalToScheduleConf: icalToScheduleConf,\n  rooms: rooms\n}\n",
         "outputs": 1,
@@ -354,8 +286,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 250,
-        "y": 200,
+        "x": 230,
+        "y": 220,
         "wires": [
             [
                 "2ad6d8f95fdc3201"
@@ -366,6 +298,7 @@
         "id": "fd9b07ee4ec18b9b",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
+        "g": "f094d9620987bdc4",
         "name": "Create scheduleAV",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet requests = [];\nlet id = 1;\n\nif (icalToScheduleConf.createScheduleAV) {\n  node.warn(\"Creating scheduleAV for each active room...\");\n  for (let i = 0; i < rooms.length; i++) {\n    if (rooms[i].isActive) {\n      requests.push({\n        id: String(id),\n        method: \"POST\",\n        url: \"/api/rest/v2/services/bacnet/local/objects/add\",\n        body: {\n          \"object-type\": \"AnalogValue\",\n          \"instance-number\": rooms[i].scheduleID + icalToScheduleConf.scheduleAVInstanceOffset,\n          name: `scheduleAV-${rooms[i].scheduleName}`\n        }\n      });\n\n      id++;\n    }\n  }\n}\n\nreturn {\n  method: \"POST\",\n  url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    requests: requests\n  },\n  icalToScheduleConf: icalToScheduleConf,\n  rooms: rooms\n}\n",
         "outputs": 1,
@@ -374,8 +307,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 570,
-        "y": 200,
+        "x": 590,
+        "y": 220,
         "wires": [
             [
                 "2ea0dfffdd7988af"
@@ -386,6 +319,7 @@
         "id": "2ea0dfffdd7988af",
         "type": "http request",
         "z": "5dbb742ee17c0ff3",
+        "g": "f094d9620987bdc4",
         "name": "HTTP",
         "method": "use",
         "ret": "obj",
@@ -398,11 +332,11 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 730,
-        "y": 200,
+        "x": 770,
+        "y": 220,
         "wires": [
             [
-                "a6a22eb1ad8b3a08"
+                "35edf377f9e5a17e"
             ]
         ]
     },
@@ -410,6 +344,7 @@
         "id": "730838ec638e822c",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
+        "g": "e37ae50a2f8ed5ef",
         "name": "Set default",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet requests = [];\nlet id = 1;\n\nfor (let i = 0; i < rooms.length; i++) {\n\n  // Create Schedule\n  if (icalToScheduleConf.createScheduleFromURL) {\n    requests.push({\n      id: String(id),\n      method: \"POST\",\n      url: `/api/rest/v2/services/bacnet/local/objects/schedules/${rooms[i].scheduleID}`,\n      body: {\n        \"schedule-default\": 19,\n        description: `Schedule for room ${rooms[i].scheduleName}`\n      }\n    });\n\n    id++;\n  }\n}\n\n\nreturn {\n  method: \"POST\",\n  url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    requests: requests\n  },\n  icalToScheduleConf: icalToScheduleConf,\n  rooms: rooms\n}\n\n",
         "outputs": 1,
@@ -418,12 +353,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 910,
-        "y": 140,
+        "x": 950,
+        "y": 100,
         "wires": [
             [
-                "29a601698cca258b",
-                "28dd3083d07d3e27"
+                "29a601698cca258b"
             ]
         ]
     },
@@ -431,65 +365,32 @@
         "id": "29a601698cca258b",
         "type": "http request",
         "z": "5dbb742ee17c0ff3",
+        "g": "e37ae50a2f8ed5ef",
         "name": "HTTP",
         "method": "use",
         "ret": "txt",
         "paytoqs": "ignore",
         "url": "",
-        "tls": "5c97a914f1743284",
+        "tls": "4137b33b296425ab",
         "persist": false,
         "proxy": "",
         "insecureHTTPParser": false,
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1070,
-        "y": 140,
+        "x": 1130,
+        "y": 100,
         "wires": [
             [
-                "316a95685b23ab95",
-                "ac29e1b761b56299"
+                "c7acac67a8591608"
             ]
         ]
-    },
-    {
-        "id": "28dd3083d07d3e27",
-        "type": "debug",
-        "z": "5dbb742ee17c0ff3",
-        "name": "debug 8",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1120,
-        "y": 80,
-        "wires": []
-    },
-    {
-        "id": "316a95685b23ab95",
-        "type": "debug",
-        "z": "5dbb742ee17c0ff3",
-        "name": "debug 9",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1180,
-        "y": 100,
-        "wires": []
     },
     {
         "id": "3737343a5f5872f7",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
+        "g": "28506bdb4077cc5c",
         "name": "Debug controllerSetpoint",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\n\nlet requests = [];\nlet id = 12;\n\nfor (let i = 0; i < 10; i++) {\n\n  if (icalToScheduleConf.createScheduleAV) {\n    requests.push({\n      id: String(id),\n      method: \"POST\",\n      url: \"/api/rest/v2/services/bacnet/local/objects/add\",\n      body: {\n        \"object-type\": \"AnalogValue\",\n        \"instance-number\": id,\n        name: `controllerSetpoint-${id}`\n      }\n    });\n\n    id = id + 10;\n  }\n}\n\n\nreturn {\n  method: \"POST\",\n  url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    requests: requests\n  }\n}\n",
         "outputs": 1,
@@ -498,8 +399,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 970,
-        "y": 200,
+        "x": 590,
+        "y": 620,
         "wires": [
             [
                 "d5b5679c5aca42eb"
@@ -510,6 +411,7 @@
         "id": "d5b5679c5aca42eb",
         "type": "http request",
         "z": "5dbb742ee17c0ff3",
+        "g": "28506bdb4077cc5c",
         "name": "HTTP",
         "method": "use",
         "ret": "obj",
@@ -522,8 +424,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 1150,
-        "y": 200,
+        "x": 830,
+        "y": 620,
         "wires": [
             []
         ]
@@ -532,6 +434,7 @@
         "id": "b1e9fd183195ae36",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
+        "g": "b67f8ba5d9a309f3",
         "name": "Delete all bindings",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nlet requests = [];\nlet bindingList = [];\nlet id = 1;\n\nfor (let binding in msg.payload) {\n    bindingList.push(binding);\n}\n\nfor (let i = 0; i < bindingList.length; i++) {\n    requests.push({\n        id: String(id),\n        method: \"DELETE\",\n        url: `/api/rest/v2/services/events/bindings/${bindingList[i]}`\n    });\n\n    id++\n}\n\nreturn {\n    method: \"POST\",\n    url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n    headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n    payload: {\n        requests: requests\n    },\n    icalToScheduleConf: icalToScheduleConf,\n    rooms : rooms\n};\n\n",
         "outputs": 1,
@@ -540,8 +443,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 390,
-        "y": 280,
+        "x": 590,
+        "y": 340,
         "wires": [
             [
                 "cc7e23eb4d6926a9"
@@ -552,6 +455,7 @@
         "id": "cc7e23eb4d6926a9",
         "type": "http request",
         "z": "5dbb742ee17c0ff3",
+        "g": "b67f8ba5d9a309f3",
         "name": "HTTP",
         "method": "use",
         "ret": "obj",
@@ -564,8 +468,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 570,
-        "y": 280,
+        "x": 770,
+        "y": 340,
         "wires": [
             [
                 "a12c21f788c0e381"
@@ -576,6 +480,7 @@
         "id": "a6a22eb1ad8b3a08",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
+        "g": "b67f8ba5d9a309f3",
         "name": "List Bindings",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\n\nreturn {\n    method: \"GET\",\n    url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/services/events/bindings\",\n    headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n    icalToScheduleConf: icalToScheduleConf,\n    rooms : rooms\n};",
         "outputs": 1,
@@ -584,8 +489,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 250,
-        "y": 240,
+        "x": 210,
+        "y": 340,
         "wires": [
             [
                 "c32af76823764db9"
@@ -596,6 +501,7 @@
         "id": "c32af76823764db9",
         "type": "http request",
         "z": "5dbb742ee17c0ff3",
+        "g": "b67f8ba5d9a309f3",
         "name": "HTTP",
         "method": "use",
         "ret": "obj",
@@ -608,8 +514,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 210,
-        "y": 280,
+        "x": 410,
+        "y": 340,
         "wires": [
             [
                 "b1e9fd183195ae36"
@@ -620,24 +526,24 @@
         "id": "bd6ef7a8d89555a5",
         "type": "http request",
         "z": "5dbb742ee17c0ff3",
+        "g": "b67f8ba5d9a309f3",
         "name": "HTTP",
         "method": "use",
         "ret": "obj",
         "paytoqs": "ignore",
         "url": "",
-        "tls": "2418490b3512393e",
+        "tls": "4137b33b296425ab",
         "persist": false,
         "proxy": "",
         "insecureHTTPParser": false,
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 910,
-        "y": 280,
+        "x": 1130,
+        "y": 340,
         "wires": [
             [
-                "462f2068c862359a",
-                "60ec676a516ab2b5"
+                "7bfcf7963c7e5a16"
             ]
         ]
     },
@@ -645,6 +551,7 @@
         "id": "a12c21f788c0e381",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
+        "g": "b67f8ba5d9a309f3",
         "name": "create Bindings",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\nlet deviceList = global.get(\"g_deviceList\");\n\nlet requests = [];\nlet id = 1;\n\nif (icalToScheduleConf.createBindings) {\n  node.warn(\"Creating bindings for each active room...\");\n\n  /******  For Each room  ******/\n  for (let i = 0; i < rooms.length; i++) {\n    if (rooms[i].isActive) {\n      let deviceTypes = Object.keys(rooms[i].devices);\n      let scheduleName = rooms[i].scheduleName;\n      let scheduleID = rooms[i].scheduleID;\n      let scheduleAVinstanceNum = rooms[i].scheduleID + icalToScheduleConf.scheduleAVInstanceOffset;\n\n      /******  Each device type  ******/\n      for (let j = 0; j < deviceTypes.length; j++) {\n        let AVToBindName = rooms[i].devices[deviceTypes[j]].AVToBindName;\n        let AVToBindNameInstanceNumOffset = deviceList[deviceTypes[j]].bacnet.objects[rooms[i].devices[deviceTypes[j]].AVToBindName].instanceNum;\n        let offsetAV = deviceList[deviceTypes[j]].bacnet.offsetAV;\n\n        /******  Each device Num  ******/\n        for (let k = 0; k < rooms[i].devices[deviceTypes[j]].deviceNums.length; k++) {\n          let deviceNum = rooms[i].devices[deviceTypes[j]].deviceNums[k];\n          let AVToBindNameInstanceNum = deviceList[deviceTypes].bacnet.instanceRangeAV * deviceNum + AVToBindNameInstanceNumOffset + offsetAV;\n\n          requests.push({\n            id: String(id),\n            method: \"POST\",\n            url: `/api/rest/v2/services/events/bindings/binding_scheduleAV-${scheduleName}_${AVToBindName}-${AVToBindNameInstanceNum}`,\n            body: {\n              //key: \"Don't need this??\",\n              type: \"ControlElement\",\n              \"element-a\": `/services/bacnet/local/objects/analog-values/${icalToScheduleConf.scheduleAVInstanceOffset + scheduleID}`,\n              \"element-b\": `/services/bacnet/local/objects/analog-values/${AVToBindNameInstanceNum}`,\n              initialize: \"a-to-b\",\n              \"sync-a-to-b\": {\n                options: { priorities: true, \"write-priority\": 14, value: false, \"out-of-service\": true },\n                triggers: { \"1\": { key: \"1\", \"min-sync-time\": 0.0, type: \"OnChange\" } }\n              }\n            }\n          });\n          id++;\n        }\n      }\n    }\n  }\n}\n\n\nreturn {\n  method: \"POST\",\n  url: \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/batch\",\n  headers: { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  payload: {\n    requests: requests\n  },\n  icalToScheduleConf: icalToScheduleConf,\n  rooms: rooms\n}\n\n",
         "outputs": 1,
@@ -653,8 +560,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 740,
-        "y": 280,
+        "x": 960,
+        "y": 340,
         "wires": [
             [
                 "bd6ef7a8d89555a5"
@@ -665,7 +572,7 @@
         "id": "462f2068c862359a",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
-        "g": "81501d60ee8af590",
+        "g": "c3f92ca09dc208e5",
         "name": "Rooms",
         "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\nlet nbActiveRooms = rooms.filter(element => element.isActive === true).length;\n\nfunction createEvent() {\n    icalToScheduleConf.nbActiveRooms = nbActiveRooms;\n    icalToScheduleConf.startTimeUpdateSchedule = Date.now();\n    icalToScheduleConf.roomCounter = 0;\n\n    flow.set('sf_icalToScheduleConf', icalToScheduleConf);\n    for (let j = 0; j < rooms.length; j++) {\n        if (rooms[j].isActive) {\n            node.send({\n                action: \"queue\",\n                payload: rooms[j]\n            });\n        }\n    }\n}\n\ncreateEvent();\nsetInterval(createEvent, icalToScheduleConf.timeBetweenScheduleUpdate * 1000); \n\n\n\n\n\n",
         "outputs": 1,
@@ -674,8 +581,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 240,
-        "y": 440,
+        "x": 200,
+        "y": 460,
         "wires": [
             [
                 "7645dca7b0aceb54"
@@ -687,7 +594,7 @@
         "id": "d1224723bc7a5097",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
-        "g": "81501d60ee8af590",
+        "g": "c3f92ca09dc208e5",
         "name": "All rooms process time",
         "func": "let roomInfo = msg.roomInfo;\nlet msgCorrect = false;\n\nlet icalToScheduleConf = flow.get('sf_icalToScheduleConf');\n\n\nswitch (msg.statusCode) {\n    case 200:\n        msgCorrect = true;\n        break;\n    case 400:\n        node.error(\"Error 400: Bad HTTP Request\");\n        if (msg.payload.includes(\"write-access-denied\")) {\n            node.error(\"Error: Trying to write a Read Only object (analogInput)\");\n        }\n        break;\n    case 401:\n        node.error(\"Error 401: Can't connect to controller: Authorization error\");\n        break;\n    case 500:\n        node.error(\"Error 500: Server Error 500\");\n        break;\n    case 404:\n        node.error(`Error 404 : Schedule ${msg.roomConf.scheduleName} doesn't exist `);\n        break;\n    case \"ETIMEDOUT\":\n        node.error(\"Error: Can't connect to controller: TimeOut\");\n        break;\n    case 501:\n        node.error(\"Error 501. Not recognized request methode. Server not capable of supporting it for any resource\")\n        break;\n    case \"ENOTFOUND\":\n        node.error(\"RequestError: no url found. Please correct the url\")\n}\n\n\nicalToScheduleConf.roomCounter++;\n//node.warn(\"Room counter : \" +  icalToScheduleConf.roomCounter);\n//node.warn(\"NB Room : \" +  icalToScheduleConf.nbActiveRooms);\nif(icalToScheduleConf.roomCounter % icalToScheduleConf.nbActiveRooms == 0){\n    node.warn(`${icalToScheduleConf.nbActiveRooms} rooms processed in ${(Date.now() - icalToScheduleConf.startTimeUpdateSchedule) / 1000} s`);\n    node.status({ fill: \"green\", shape: \"dot\", text: `Process time : ${(Date.now() - icalToScheduleConf.startTimeUpdateSchedule) / 1000} s`});\n    icalToScheduleConf.startTimeUpdateSchedule =  Date.now();\n}\n\nflow.set('sf_icalToScheduleConf',icalToScheduleConf);\n\nmsg.action = \"unqueue\";\nreturn msg;\n",
         "outputs": 1,
@@ -697,7 +604,7 @@
         "finalize": "",
         "libs": [],
         "x": 1180,
-        "y": 440,
+        "y": 460,
         "wires": [
             [
                 "7645dca7b0aceb54"
@@ -708,7 +615,7 @@
         "id": "7645dca7b0aceb54",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
-        "g": "81501d60ee8af590",
+        "g": "c3f92ca09dc208e5",
         "name": "Room Queue",
         "func": "let roomsQueue = flow.get('f_roomsQueue');\nconst maxQueueSize = 150;\n\n\nnode.status({ fill: \"green\", shape: \"dot\", text: `Queue size : ${roomsQueue.length} ` });\n\n////////////////// Queue ////////////////\nif (msg.action === \"queue\") {\n    if (roomsQueue.length > maxQueueSize) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `Queue overflow (max : ${maxQueueSize})} ` });\n        node.error(`Room queue has exeeded its maximum size ${maxQueueSize}`);\n    }\n    else if (roomsQueue.length == 0 && flow.get('f_initialStart')) {\n        // First message, no need to queue.\n        flow.set('f_initialStart', false);\n        node.warn(\"Creating events for each room...\");\n        return {\n            \"url\": msg.payload.url,\n            \"timezone\": msg.payload.timeZone,\n            \"preview\": msg.payload.nbrDaysPreview,\n            \"roomConf\": msg.payload\n\n        }\n    }\n    else {\n        //node.warn(\"Other message, Queue\");\n        roomsQueue.push(msg.payload);\n        flow.set('f_roomsQueue', roomsQueue);\n    }\n}\n\n////////////////// Unqueue ////////////////\nelse if (msg.action === \"unqueue\") {\n    if (roomsQueue.length === 0) {\n        flow.set('f_initialStart', true);\n        //node.warn(\"Unqueue with lenght == 0, initialStart = true\");\n    }\n    else {\n        let newRoom = roomsQueue.shift();\n        flow.set('f_roomsQueue', roomsQueue);\n        //node.warn(\"Unqueue\");\n        return {\n            \"url\": newRoom.url,\n            \"timezone\": newRoom.timeZone,\n            \"preview\": msg.payload.nbrDaysPreview,\n            \"roomConf\": newRoom\n        }\n    }\n}\n\n",
         "outputs": 1,
@@ -718,7 +625,7 @@
         "finalize": "",
         "libs": [],
         "x": 410,
-        "y": 440,
+        "y": 460,
         "wires": [
             [
                 "1638c9f70a6a5b5d"
@@ -729,7 +636,7 @@
         "id": "45bc9d7175fac2ed",
         "type": "http request",
         "z": "5dbb742ee17c0ff3",
-        "g": "81501d60ee8af590",
+        "g": "c3f92ca09dc208e5",
         "name": "HTTP",
         "method": "use",
         "ret": "txt",
@@ -743,7 +650,7 @@
         "senderr": false,
         "headers": [],
         "x": 990,
-        "y": 440,
+        "y": 460,
         "wires": [
             [
                 "d1224723bc7a5097"
@@ -754,7 +661,7 @@
         "id": "1638c9f70a6a5b5d",
         "type": "ical-upcoming",
         "z": "5dbb742ee17c0ff3",
-        "g": "81501d60ee8af590",
+        "g": "c3f92ca09dc208e5",
         "confignode": "90b0640636b3bfc5",
         "timeout": "",
         "timeoutUnits": "seconds",
@@ -796,7 +703,7 @@
         "pastviewUnits": "days",
         "pastviewUnitstype": "pastviewUnits",
         "x": 610,
-        "y": 440,
+        "y": 460,
         "wires": [
             [
                 "a53e15c8f201a4f4"
@@ -807,7 +714,7 @@
         "id": "a53e15c8f201a4f4",
         "type": "function",
         "z": "5dbb742ee17c0ff3",
-        "g": "81501d60ee8af590",
+        "g": "c3f92ca09dc208e5",
         "name": "Create events",
         "func": "let icalToScheduleConf = flow.get('sf_icalToScheduleConf');\nlet roomConf = msg.roomConf;\nlet eventNumber = msg.total;\nlet events = [/* {eventStart : Date , eventEnd : Date,, ...}*/];  // List of events to create.\nlet httpRequestEventList = {};\n\n///////////////////////////////////////////////////////////////////////\n/////////////////     Events manipulation  ////////////////////////////\n///////////////////////////////////////////////////////////////////////\nfor (let i = 0; i < eventNumber; i++) {\n\n  // Event are discarded according to their \"event description\" in the ics file.\n  if (!icalToScheduleConf.eventsToDiscard.some(discardStr => msg.payload[i].description?.includes(discardStr))) {\n\n    //////////  groupEvents == true   //////////////\n    if (icalToScheduleConf.groupEvents) {\n      let msgEventStart = new Date(msg.payload[i].eventStart);\n      let msgEventEnd = new Date(msg.payload[i].eventEnd);\n\n      // Check if an event with same year-date-time already exist in events[].\n      const idx = events.findIndex(evt => {\n        return (\n          msgEventStart.getDate() === evt.eventStart.getDate() &&\n          msgEventEnd.getMonth() === evt.eventStart.getMonth() &&\n          msgEventEnd.getFullYear() === evt.eventStart.getFullYear()\n        );\n      });\n\n      if (idx != -1) {    // Event with same year-date-time already exits\n\n        if (msgEventStart < events[idx].eventStart) events[idx].eventStart = msgEventStart; // Update start time\n        if (msgEventEnd > events[idx].eventEnd) events[idx].eventEnd = msgEventEnd;         // Update end time\n        //node.warn(\"idx : \" + idx);\n        //node.warn(events);\n      }\n      else {               // Add a new event\n        //node.warn(\"Event added\");\n        events.push(msg.payload[i]);\n        events.at(-1).eventStart = new Date(events.at(-1).eventStart);  // at(-1) = last index\n        events.at(-1).eventEnd = new Date(events.at(-1).eventEnd);      // at(-1) = last index\n        events.at(-1).summary = \"Merged Events\";\n        //node.warn(events);\n      }\n    }\n\n    //////////  groupEvents == false   //////////////\n    else {\n      //node.warn(\"Event added\");\n      events.push(msg.payload[i]);\n      events.at(-1).eventStart = new Date(events.at(-1).eventStart);  // at(-1) = last index\n      events.at(-1).eventEnd = new Date(events.at(-1).eventEnd);      // at(-1) = last index\n    }\n  }\n  else {\n    //node.warn(`Event ${i} : ${msg.payload[i].summary} is discarded`);\n  }\n}\n\n// node.warn(events);\n\n\n///////////////////////////////////////////////////////////////////////\n/////////////////    HTTP Request Creation   //////////////////////////\n///////////////////////////////////////////////////////////////////////\nlet eventID = 1;\n\nfor (let i = 0; i < events.length; i++) {\n\n  let start = new Date(events[i].eventStart);\n  let end = new Date(events[i].eventEnd);\n\n  // Rule 1 : discard events shorter than 30 minutes\n  const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);\n  if (durationMinutes < icalToScheduleConf.minimumSlotDuration) {\n    node.warn(`Event ${i} \"${events[i].summary}\" discarded (duration < ${icalToScheduleConf.minimumSlotDuration} min).`);\n    continue;\n  }\n\n  // Adjust the time with timeOffsetBeforeStart and timeOffsetBeforeEnd\n  if (icalToScheduleConf.groupEvents) {\n    const midnight = new Date(start);\n    midnight.setHours(0, 0, 0, 0);\n\n    start.setMinutes(start.getMinutes() - roomConf.timeOffsetBeforeStart);\n    end.setMinutes(end.getMinutes() - roomConf.timeOffsetBeforeEnd);\n\n    // Rule 2 : Clamp start to midnight if it went before 00:00\n    if (start < midnight) {\n      start = new Date(midnight);\n      node.warn(`Event ${i} \"${events[i].summary}\" clamp to midnight.`);\n    }\n\n    // Rule 3 : ensure start < end.\n    if (start >= end) {\n      node.warn(`Event ${i} \"${events[i].summary}\" discarded  (start >= end).`);\n      continue;\n    }\n  }\n\n\n  // Create Event request\n  let eventObject = {\n    [eventID]: {\n      \"event-priority\": 16,\n      period: {\n        date: {\n          month: start.getMonth() + 1,\n          year: start.getFullYear(),\n          \"day-of-month\": start.getDate()\n        },\n        type: \"Date\"\n      },\n      name: events[i].summary,\n      transitions: {\n        1: {\n          time: start.toLocaleTimeString(\"fr-FR\", { timeZone: icalToScheduleConf.timeZone }),\n          value: roomConf.tempOccupied,\n          key: \"1\"\n        },\n        2: {\n          time: end.toLocaleTimeString(\"fr-FR\", { timeZone: icalToScheduleConf.timeZone }),\n          value: null,\n          key: \"2\"\n        }\n      },\n      key: String(eventID)\n    }\n  };\n  eventID++;\n  httpRequestEventList = { ...httpRequestEventList, ...eventObject };   // Merge with the previous object\n}\n\nlet request = {\n  \"method\": \"POST\",\n  \"url\": `https://${icalToScheduleConf.controllerIPAddress}/api/rest/v2/services/bacnet/local/objects/schedules/${roomConf.scheduleID}`,\n  \"headers\": { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n  \"payload\": {\n    \"special-events\": httpRequestEventList,\n    \"object-name\": roomConf.scheduleName,\n    \"schedule-default\": roomConf.tempUnoccupied\n  },\n  \"roomConf\": msg.roomConf\n};\n\nreturn request;\n",
         "outputs": 1,
@@ -817,7 +724,7 @@
         "finalize": "",
         "libs": [],
         "x": 820,
-        "y": 440,
+        "y": 460,
         "wires": [
             [
                 "45bc9d7175fac2ed"
@@ -825,31 +732,177 @@
         ]
     },
     {
-        "id": "60ec676a516ab2b5",
-        "type": "debug",
+        "id": "c7acac67a8591608",
+        "type": "link out",
         "z": "5dbb742ee17c0ff3",
-        "name": "debug 1",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "true",
-        "targetType": "full",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 1080,
-        "y": 280,
+        "g": "e37ae50a2f8ed5ef",
+        "name": "schedule out",
+        "mode": "link",
+        "links": [
+            "00ecb0c894ef55f1"
+        ],
+        "x": 1255,
+        "y": 100,
         "wires": []
     },
     {
-        "id": "81501d60ee8af590",
+        "id": "35edf377f9e5a17e",
+        "type": "link out",
+        "z": "5dbb742ee17c0ff3",
+        "g": "f094d9620987bdc4",
+        "name": "scheduleAV out",
+        "mode": "link",
+        "links": [
+            "6235dce75dbabec5"
+        ],
+        "x": 1255,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "7bfcf7963c7e5a16",
+        "type": "link out",
+        "z": "5dbb742ee17c0ff3",
+        "g": "b67f8ba5d9a309f3",
+        "name": "bindings out",
+        "mode": "link",
+        "links": [
+            "e2c7c1cb7036dbac"
+        ],
+        "x": 1255,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "00ecb0c894ef55f1",
+        "type": "link in",
+        "z": "5dbb742ee17c0ff3",
+        "name": "scheduleAV in",
+        "links": [
+            "c7acac67a8591608"
+        ],
+        "x": 55,
+        "y": 220,
+        "wires": [
+            [
+                "ac29e1b761b56299"
+            ]
+        ]
+    },
+    {
+        "id": "6235dce75dbabec5",
+        "type": "link in",
+        "z": "5dbb742ee17c0ff3",
+        "name": "bindings in",
+        "links": [
+            "35edf377f9e5a17e"
+        ],
+        "x": 55,
+        "y": 340,
+        "wires": [
+            [
+                "a6a22eb1ad8b3a08"
+            ]
+        ]
+    },
+    {
+        "id": "e2c7c1cb7036dbac",
+        "type": "link in",
+        "z": "5dbb742ee17c0ff3",
+        "name": "link in 1",
+        "links": [
+            "7bfcf7963c7e5a16"
+        ],
+        "x": 55,
+        "y": 460,
+        "wires": [
+            [
+                "462f2068c862359a"
+            ]
+        ]
+    },
+    {
+        "id": "b67f8ba5d9a309f3",
         "type": "group",
         "z": "5dbb742ee17c0ff3",
-        "name": "Create Events",
+        "name": "Bindings",
         "style": {
-            "stroke": "#92d04f",
+            "label": true,
+            "color": "#000000",
+            "fill": "#ffbfbf",
+            "label-position": "n"
+        },
+        "nodes": [
+            "b1e9fd183195ae36",
+            "cc7e23eb4d6926a9",
+            "a6a22eb1ad8b3a08",
+            "c32af76823764db9",
+            "bd6ef7a8d89555a5",
+            "a12c21f788c0e381",
+            "7bfcf7963c7e5a16"
+        ],
+        "x": 114,
+        "y": 299,
+        "w": 1182,
+        "h": 82
+    },
+    {
+        "id": "e37ae50a2f8ed5ef",
+        "type": "group",
+        "z": "5dbb742ee17c0ff3",
+        "name": "Schedule",
+        "style": {
+            "fill": "#ffefbf",
+            "label": true,
+            "label-position": "n",
+            "color": "#000000"
+        },
+        "nodes": [
+            "8897ec7dc936e9c1",
+            "0a8636783b08fe3e",
+            "2f1b85af7c083c81",
+            "eb3ea11c5bbfc50e",
+            "730838ec638e822c",
+            "29a601698cca258b",
+            "c7acac67a8591608"
+        ],
+        "x": 114,
+        "y": 59,
+        "w": 1182,
+        "h": 82
+    },
+    {
+        "id": "f094d9620987bdc4",
+        "type": "group",
+        "z": "5dbb742ee17c0ff3",
+        "name": "ScheduleAV",
+        "style": {
+            "fill": "#e3f3d3",
+            "label": true,
+            "label-position": "n",
+            "color": "#000000"
+        },
+        "nodes": [
+            "2ad6d8f95fdc3201",
+            "ac29e1b761b56299",
+            "fd9b07ee4ec18b9b",
+            "2ea0dfffdd7988af",
+            "35edf377f9e5a17e"
+        ],
+        "x": 114,
+        "y": 179,
+        "w": 1182,
+        "h": 82
+    },
+    {
+        "id": "c3f92ca09dc208e5",
+        "type": "group",
+        "z": "5dbb742ee17c0ff3",
+        "name": "Create events",
+        "style": {
             "fill": "#bfdbef",
             "label": true,
+            "label-position": "n",
             "color": "#000000"
         },
         "nodes": [
@@ -860,38 +913,29 @@
             "1638c9f70a6a5b5d",
             "a53e15c8f201a4f4"
         ],
-        "x": 154,
-        "y": 399,
-        "w": 1152,
+        "x": 114,
+        "y": 419,
+        "w": 1192,
         "h": 82
     },
     {
-        "id": "5c97a914f1743284",
-        "type": "tls-config",
-        "name": "",
-        "cert": "",
-        "key": "",
-        "ca": "",
-        "certname": "",
-        "keyname": "",
-        "caname": "",
-        "servername": "",
-        "verifyservercert": false,
-        "alpnprotocol": ""
-    },
-    {
-        "id": "2418490b3512393e",
-        "type": "tls-config",
-        "name": "",
-        "cert": "",
-        "key": "",
-        "ca": "",
-        "certname": "",
-        "keyname": "",
-        "caname": "",
-        "servername": "",
-        "verifyservercert": false,
-        "alpnprotocol": ""
+        "id": "28506bdb4077cc5c",
+        "type": "group",
+        "z": "5dbb742ee17c0ff3",
+        "name": "For DEBUG",
+        "style": {
+            "label": true,
+            "label-position": "n",
+            "color": "#000000"
+        },
+        "nodes": [
+            "3737343a5f5872f7",
+            "d5b5679c5aca42eb"
+        ],
+        "x": 454,
+        "y": 579,
+        "w": 452,
+        "h": 82
     },
     {
         "id": "90b0640636b3bfc5",
@@ -921,10 +965,10 @@
         "id": "4b406db4738b82ca",
         "type": "group",
         "z": "7f657f2f68fed6cd",
-        "name": "DEBUG",
+        "name": "For DEBUG",
         "style": {
             "label": true,
-            "stroke": "#e3f3d3",
+            "stroke": "#a4a4a4",
             "label-position": "n",
             "color": "#000000",
             "fill": "#e3f3d3"
@@ -945,15 +989,36 @@
             "73b61f6057d7d778",
             "36fe9f8855df5088"
         ],
-        "x": 74,
-        "y": 219,
+        "x": 164,
+        "y": 379,
         "w": 1032,
         "h": 162
+    },
+    {
+        "id": "2bdeaa9207e91a2e",
+        "type": "group",
+        "z": "7f657f2f68fed6cd",
+        "name": "IcalToSchedule",
+        "style": {
+            "fill": "#bfdbef",
+            "label": true
+        },
+        "nodes": [
+            "3020ce83a28a56af",
+            "a983afd50cbd9ec9",
+            "0b29934553d7c1e4",
+            "e6fe0c0fedc1e79e"
+        ],
+        "x": 234,
+        "y": 79,
+        "w": 872,
+        "h": 182
     },
     {
         "id": "3020ce83a28a56af",
         "type": "function",
         "z": "7f657f2f68fed6cd",
+        "g": "2bdeaa9207e91a2e",
         "name": "TO CONFIGURE",
         "func": "//////////////////////////////////////////////\n//////////////// TO CONFIGURE ////////////////\n//////////////////////////////////////////////\n\n// 1. Create BACnet Schedule from url \nconst createScheduleFromURL = true;     // Do you want to create schedule for each Room?\nconst timeBetweenScheduleUpdate = 100;    // Seconds, Time to refresh calendar events\nconst scheduleInstanceRange = [0, 50];\nconst groupEvents = true;               // Group events in 1 event/day\nconst timeZone = 'Europe/Paris';        // What are the other options ?\nconst eventsToDiscard = [\"TO CONFIGURE\"]; // all events that content this string in their description will be ignored\nconst defaultTempOccupied = 20;\nconst defaultTempUnoccupied = 16;\nconst defaultTimeOffsetBeforeStart = 0;            // in mins\nconst defaultTimeOffsetBeforeEnd = 0;              // in mins\nconst defaultNbrDaysPreview = 10;                   // Days\nconst addSuffixToAdeURL = true;\nconst minimumSlotDuration = 20;                     // in mins\n\n// 2. Create and assign an analog value for each schedule\nconst createScheduleAV = true;\nconst scheduleAVInstanceOffset = 10000;  //  The starting instance of theses values\nconst timeBetweenScheduleAVUpdate = 10; //   Seconds\n\n// 3. Create bindings between all scheduleAV and controllerSetpoint\nconst createBindings = true; // Mandatory : Devices, deviceList\n\n\n// Info : \n// * minimumSlotDuration is only checked when groupEvents = false.\n// * defaultTimeOffsetBeforeStart and defaultTimeOffsetBeforeEnd are only applied when groupEvents = true.\n// * eventsToDiscard is always appliead whatever groupsEvents value.\n\n\n\n/////////////////////////////\n///// Rooms Informations  ///\n/////////////////////////////\n\n/* Room Template \n{\n    // Mandatory //\n    \"scheduleID\": 0,\n    \"scheduleName\": \"roomName0\",\n    \"devices\": { \"device-1\": { \"deviceNums\": [1, 2, 3], \"AVToBindName\": \"controllerSetpoint\" } },\n    \"url\": 'https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=1480&projectId=5&calType=ical&lastDate=2042-08-14',\n    \n    // Optionnal, if not specified the default value will be applied //\n    \"isActive\": true,\n    \"nbrDaysPreview\" : defaultNbrDaysPreview,\n    \"tempOccupied\": defaultTempOccupied,\n    \"tempUnoccupied\": defaultTempUnoccupied,\n    \"timeOffsetBeforeStart\": defaultTimeOffsetBeforeStart,\n    \"timeOffsetBeforeEnd\": defaultTimeOffsetBeforeEnd\n*/\n\n\nlet rooms = [{\n    // Mandatory\n    \"scheduleID\": 0,\n    \"scheduleName\": \"roomName0\",\n    \"devices\": { \"usmb-valve\": { \"deviceNums\": [1, 2, 3], \"AVToBindName\": \"controllerSetpoint\" } },\n    \"url\": 'https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=1480&projectId=5&calType=ical&lastDate=2042-08-14',\n    \n    // Optionnal\n    \"isActive\": true,\n    \"tempOccupied\": defaultTempOccupied,\n    \"tempUnoccupied\": defaultTempUnoccupied,\n    \"timeOffsetBeforeStart\": defaultTimeOffsetBeforeStart,\n    \"timeOffsetBeforeEnd\": defaultTimeOffsetBeforeEnd\n},\n{\n    \"scheduleID\": 1,\n    \"isActive\": true,\n    \"scheduleName\": \"roomName1\",\n    \"devices\": { \"usmb-valve\": { \"deviceNums\": [4, 5, 6], \"AVToBindName\": \"controllerSetpoint\" } },\n    \"tempOccupied\": defaultTempOccupied,\n    \"tempUnoccupied\": defaultTempUnoccupied,\n    \"timeOffsetBeforeStart\": defaultTimeOffsetBeforeStart,\n    \"timeOffsetBeforeEnd\": defaultTimeOffsetBeforeEnd,\n    \"url\": 'https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=1480&projectId=5&calType=ical&lastDate=2042-08-14'\n},\n{\n    \"scheduleID\": 2,\n    \"isActive\": true,\n    \"scheduleName\": \"roomName2\",\n    \"devices\": { \"usmb-valve\": { \"deviceNums\": [7, 8, 9], \"AVToBindName\": \"controllerSetpoint\" } },\n    \"tempOccupied\": defaultTempOccupied,\n    \"tempUnoccupied\": defaultTempUnoccupied,\n    \"timeOffsetBeforeStart\": defaultTimeOffsetBeforeStart,\n    \"timeOffsetBeforeEnd\": defaultTimeOffsetBeforeEnd,\n    \"url\": 'https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=1480&projectId=5&calType=ical&lastDate=2042-08-14'\n}\n];\n\n\n/////////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////////\n/////////////////////////////////////////////////\n\nconst deviceList = global.get('g_deviceList');    // From LoRaBAC node\n\nif(!deviceList){\n    node.status({ fill: \"red\", shape: \"dot\", text: `Device List missing from LoRaBAC node` });\n    return null;\n}\n\nfor (let device in deviceList) {\n    if (Object.keys(deviceList).some(dev => deviceList[dev].controller.ipAddress != deviceList[device].controller.ipAddress)) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `Controller IP Address are not all the same in device list` });\n        return null;\n    }\n}\n\nif (scheduleInstanceRange[0] > scheduleInstanceRange[1] || scheduleInstanceRange.length !== 2) {\n    node.status({ fill: \"red\", shape: \"dot\", text: `Wrong Schedule instance range` });\n    return null;\n}\n\nif (Object.keys(rooms).length > (scheduleInstanceRange[1] - scheduleInstanceRange[0] + 1)) {\n    node.status({ fill: \"red\", shape: \"dot\", text: `Too many rooms, increase Schedule Instance Range` });\n    return null;\n}\n\nconst scheduleIDs = rooms.map(room => room.scheduleID);\nif (new Set(scheduleIDs).size !== scheduleIDs.length) {\n    node.status({ fill: \"red\", shape: \"dot\", text: `Duplicate ScheduleID in room configuration` });\n    return null;\n}\n\nconst scheduleNames = rooms.map(room => room.scheduleName);\nif (new Set(scheduleNames).size !== scheduleNames.length) {\n    node.status({ fill: \"red\", shape: \"dot\", text: `Duplicate ScheduleName in room configuration` });\n    return null;\n}\n\nfor (let room in rooms) {\n\n    if (!rooms[room].hasOwnProperty(\"scheduleName\")) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `One room  has no scheduleName in room configuration` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"scheduleID\") || !rooms[room].hasOwnProperty(\"scheduleName\") || !rooms[room].hasOwnProperty(\"devices\") || !rooms[room].hasOwnProperty(\"url\")) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `Room  ${rooms[room].scheduleName} has no scheduleID, scheduleName, devices or url` });\n        return null;\n    }\n\n    if (rooms[room].scheduleID < scheduleInstanceRange[0] || rooms[room].scheduleID > scheduleInstanceRange[1]) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `Room ${rooms[room].scheduleName} scheduleID is not in range  ${scheduleInstanceRange[0]} to ${scheduleInstanceRange[1]} ` });\n        return null;\n    }\n\n    if (!rooms[room].url) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `url falsy value for ${rooms[room].scheduleName}` });\n        return null;\n    }\n\n    for (let device in rooms[room].devices) {\n\n        if (!Object.keys(deviceList).some(deviceType => deviceType == device)) {\n            node.status({ fill: \"red\", shape: \"dot\", text: `Room ${rooms[room].scheduleName} has a device type that doesn't belong to the device list` });\n            return null;\n        }\n\n        if (!Object.keys(deviceList[device].bacnet.objects).some(object => object == rooms[room].devices[device].AVToBindName)) {\n            node.status({ fill: \"red\", shape: \"dot\", text: `Room ${rooms[room].scheduleName} has a device with AVToBindName (${rooms[room].devices[device].AVToBindName}) that doesn't exist in the device List` });\n            return null;\n        } else if (deviceList[device].bacnet.objects[rooms[room].devices[device].AVToBindName].dataDirection !== \"downlink\") {\n            node.status({ fill: \"red\", shape: \"dot\", text: `${rooms[room].devices[device].AVToBindName} can't be a AVToBindName because it is not a downlink object in ${device}` });\n            return null;\n\n        }\n\n        if (rooms[room].devices[device].deviceNums.some(numDevice => numDevice > deviceList[device].identity.maxDevNum)) {\n            node.status({ fill: \"red\", shape: \"dot\", text: `Room ${rooms[room].scheduleName} has a device number that exceed the maximum (${deviceList[device].identity.maxDevNum}) for device type ${device}` });\n            return null;\n        }\n\n    }\n\n    if (!rooms[room].hasOwnProperty(\"isActive\")) {\n        rooms[room].isActive = true;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeZone\")) {\n        rooms[room].timeZone = timeZone;\n    }\n    if (!rooms[room].timeZone) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `timeZone falsy value for ${rooms[room].scheduleName} ` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempUnoccupied\")) {\n        rooms[room].tempUnoccupied = defaultTempUnoccupied;\n    }\n    if (!rooms[room].tempUnoccupied) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `tempUnoccupied falsy value : ${rooms[room].tempUnoccupied} ` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempOccupied\")) {\n        rooms[room].tempOccupied = defaultTempOccupied;\n    }\n    if (!rooms[room].tempOccupied) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `tempOccupied falsy value : ${rooms[room].tempOccupied} ` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"nbrDaysPreview\")) {\n        rooms[room].nbrDaysPreview = defaultNbrDaysPreview;\n    }\n    if (!rooms[room].nbrDaysPreview) {\n        node.status({ fill: \"red\", shape: \"dot\", text: `nbrDaysPreview falsy value : ${rooms[room].nbrDaysPreview} ` });\n        return null;\n    }\n\n    if (addSuffixToAdeURL) {\n        const date = new Date();\n        date.setDate(date.getDate() + rooms[room].nbrDaysPreview);\n        let adeSuffixe = date.toISOString().slice(0, 10)\n        if (rooms[room].url.includes(\"&lastDate\")) {\n            rooms[room].url = rooms[room].url.replace(/&lastDate=\\d{4}-\\d{2}-\\d{2}/, `&lastDate=${adeSuffixe}`);\n        }\n        else {\n            rooms[room].url += `&lastDate=${adeSuffixe}`;\n        }\n    }\n    //node.warn(rooms[room].url);\n\n}\n\n\nnode.status({ fill: \"green\", shape: \"dot\", text: `Configuration OK` });\n\nfor (let device in deviceList) {\n    const buffer = Buffer.from(deviceList[device].controller.login + ':' + deviceList[device].controller.password);\n    deviceList[device].controller.httpAuthentication = \"Basic \" + buffer.toString('base64');\n}\n\n// Store variables\nlet icalToScheduleConf = {\n    controllerIPAddress: deviceList[Object.keys(deviceList)[0]].controller.ipAddress,\n    controllerLogin: deviceList[Object.keys(deviceList)[0]].controller.login,\n    controllerPassword: deviceList[Object.keys(deviceList)[0]].controller.password,\n    httpAuthentication: deviceList[Object.keys(deviceList)[0]].controller.httpAuthentication,\n    createScheduleFromURL: createScheduleFromURL,\n    createScheduleAV: createScheduleAV,\n    createBindings: createBindings,\n    timeBetweenScheduleUpdate: timeBetweenScheduleUpdate,\n    timeBetweenScheduleAVUpdate: timeBetweenScheduleAVUpdate,\n    defaultTimeOffsetBeforeStart: defaultTimeOffsetBeforeStart,\n    defaultTimeOffsetBeforeEnd: defaultTimeOffsetBeforeEnd,\n    scheduleInstanceRange: scheduleInstanceRange,\n    groupEvents: groupEvents,\n    timeZone: timeZone,\n    eventsToDiscard: eventsToDiscard,\n    scheduleAVInstanceOffset: scheduleAVInstanceOffset,\n    minimumSlotDuration: minimumSlotDuration,\n}\n\nflow.set('f_icalToScheduleConf', icalToScheduleConf); // For Debug section only (to reach the BMS IP address)\n//flow.set('f_rooms', rooms);\n\nreturn msg = {\n    icalToScheduleConf: icalToScheduleConf,\n    rooms : rooms\n};\n\n\n",
         "outputs": 1,
@@ -962,8 +1027,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 250,
-        "y": 80,
+        "x": 670,
+        "y": 160,
         "wires": [
             [
                 "0b29934553d7c1e4",
@@ -976,21 +1041,21 @@
         "id": "a983afd50cbd9ec9",
         "type": "inject",
         "z": "7f657f2f68fed6cd",
-        "name": "",
+        "g": "2bdeaa9207e91a2e",
+        "name": "Start after 0.5s",
         "props": [],
         "repeat": "",
         "crontab": "",
         "once": true,
         "onceDelay": "0.5",
         "topic": "",
-        "x": 115,
-        "y": 80,
+        "x": 360,
+        "y": 160,
         "wires": [
             [
                 "3020ce83a28a56af"
             ]
-        ],
-        "l": false
+        ]
     },
     {
         "id": "27a0f3f5c52bf7ac",
@@ -1004,8 +1069,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 135,
-        "y": 260,
+        "x": 225,
+        "y": 420,
         "wires": [
             [
                 "7d748c5aaf6f1f28"
@@ -1026,8 +1091,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 280,
-        "y": 260,
+        "x": 370,
+        "y": 420,
         "wires": [
             [
                 "e03d575055699f82"
@@ -1051,8 +1116,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 430,
-        "y": 260,
+        "x": 520,
+        "y": 420,
         "wires": [
             [
                 "d7de0d2acf62511a"
@@ -1073,8 +1138,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 990,
-        "y": 260,
+        "x": 1080,
+        "y": 420,
         "wires": []
     },
     {
@@ -1089,8 +1154,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 135,
-        "y": 300,
+        "x": 225,
+        "y": 460,
         "wires": [
             [
                 "51d0792f783d7b64"
@@ -1111,8 +1176,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 270,
-        "y": 300,
+        "x": 360,
+        "y": 460,
         "wires": [
             [
                 "508407b4877e6156"
@@ -1136,8 +1201,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 430,
-        "y": 300,
+        "x": 520,
+        "y": 460,
         "wires": [
             [
                 "2753821305b99443"
@@ -1158,8 +1223,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 980,
-        "y": 300,
+        "x": 1070,
+        "y": 460,
         "wires": []
     },
     {
@@ -1175,8 +1240,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 610,
-        "y": 340,
+        "x": 700,
+        "y": 500,
         "wires": [
             [
                 "7b0d764b7536c191"
@@ -1195,8 +1260,8 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 135,
-        "y": 340,
+        "x": 225,
+        "y": 500,
         "wires": [
             [
                 "73b61f6057d7d778"
@@ -1218,8 +1283,8 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 980,
-        "y": 340,
+        "x": 1070,
+        "y": 500,
         "wires": []
     },
     {
@@ -1239,8 +1304,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 790,
-        "y": 340,
+        "x": 880,
+        "y": 500,
         "wires": [
             [
                 "5d8c9942effd2ae3"
@@ -1260,8 +1325,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 270,
-        "y": 340,
+        "x": 360,
+        "y": 500,
         "wires": [
             [
                 "36fe9f8855df5088"
@@ -1285,8 +1350,8 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 430,
-        "y": 340,
+        "x": 520,
+        "y": 500,
         "wires": [
             [
                 "ba1a4c3971af99f4"
@@ -1297,18 +1362,20 @@
         "id": "0b29934553d7c1e4",
         "type": "subflow:5dbb742ee17c0ff3",
         "z": "7f657f2f68fed6cd",
+        "g": "2bdeaa9207e91a2e",
         "name": "Configuration",
-        "x": 570,
-        "y": 80,
+        "x": 970,
+        "y": 120,
         "wires": []
     },
     {
         "id": "e6fe0c0fedc1e79e",
         "type": "subflow:06caa6a694a2292a",
         "z": "7f657f2f68fed6cd",
+        "g": "2bdeaa9207e91a2e",
         "name": "scheduleAV update",
-        "x": 570,
-        "y": 140,
+        "x": 990,
+        "y": 220,
         "wires": []
     },
     {
