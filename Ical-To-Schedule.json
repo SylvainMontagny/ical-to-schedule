@@ -1,5 +1,462 @@
 [
     {
+        "id": "14f091f3eb70505e",
+        "type": "subflow",
+        "name": "Ical Server status",
+        "info": "",
+        "category": "",
+        "in": [
+            {
+                "x": 60,
+                "y": 120,
+                "wires": [
+                    {
+                        "id": "6fbd3d754b7d39eb"
+                    }
+                ]
+            }
+        ],
+        "out": [],
+        "env": [],
+        "meta": {},
+        "color": "#DDAA99",
+        "status": {
+            "x": 536.0000095367432,
+            "y": 72.00000762939453,
+            "wires": [
+                {
+                    "id": "78cfb1c01f753b75",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "6fbd3d754b7d39eb",
+        "type": "function",
+        "z": "14f091f3eb70505e",
+        "g": "45685cf62e646d04",
+        "name": "Rooms",
+        "func": "let icalToScheduleConf = msg.icalToScheduleConf;\nlet rooms = msg.rooms;\nlet controlledByEventFromIcalNbr = rooms.filter(element => element.control === \"controlledByEventFromIcal\").length;\n\nfunction createEvent() {\n    icalToScheduleConf.controlledByEventFromIcalNbr = controlledByEventFromIcalNbr;\n    icalToScheduleConf.startTimeUpdateSchedule = Date.now();\n    icalToScheduleConf.roomCounter = 0;\n\n    flow.set('sf_icalToScheduleConf', icalToScheduleConf);\n    for (let j = 0; j < rooms.length; j++) {\n        if (rooms[j].control === \"controlledByEventFromIcal\" ) {\n            node.send({\n                action: \"queue\",\n                payload: rooms[j]\n            });\n        }\n    }\n}\n\ncreateEvent();\nsetInterval(createEvent, icalToScheduleConf.timeBetweenScheduleUpdate * 1000); \n\n\n\n\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 200,
+        "y": 120,
+        "wires": [
+            [
+                "78cfb1c01f753b75"
+            ]
+        ],
+        "icon": "node-red/parser-json.svg"
+    },
+    {
+        "id": "01c6092e55fc3605",
+        "type": "function",
+        "z": "14f091f3eb70505e",
+        "g": "45685cf62e646d04",
+        "name": "Unqueue",
+        "func": "let icalToScheduleConf = flow.get('sf_icalToScheduleConf');\n\nicalToScheduleConf.roomCounter++;\n\nif(icalToScheduleConf.roomCounter % icalToScheduleConf.controlledByEventFromIcalNbr == 0){\n    node.warn(`${icalToScheduleConf.controlledByEventFromIcalNbr} URL processed in ${(Date.now() - icalToScheduleConf.startTimeUpdateSchedule) / 1000} s`);\n}\n\nflow.set('sf_icalToScheduleConf',icalToScheduleConf);\n\nmsg.action = \"unqueue\";\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "//flow.set('f_isControllerReady', true);\n",
+        "finalize": "",
+        "libs": [],
+        "x": 1199.999984741211,
+        "y": 121.00003623962402,
+        "wires": [
+            [
+                "b195be83fc795695"
+            ]
+        ]
+    },
+    {
+        "id": "78cfb1c01f753b75",
+        "type": "function",
+        "z": "14f091f3eb70505e",
+        "g": "45685cf62e646d04",
+        "name": "Room Queue",
+        "func": "let roomsQueue = flow.get('f_roomsQueue');\nconst maxQueueSize = 40;\n\n\n////////////////// Queue ////////////////\nif (msg.action === \"queue\") {\n    if (roomsQueue.length >= maxQueueSize) {\n        node.error(`Room queue has exeeded its maximum size ${maxQueueSize}`);\n        return null;\n    }\n    else if (roomsQueue.length == 0 && flow.get('f_initialStart')) {\n        // First message, no need to queue.\n        flow.set('f_initialStart', false);\n        node.warn(\"Testing ical server for each URL...\");\n        return {\n            \"url\": msg.payload.url,\n            \"timezone\": msg.payload.timeZone,\n            \"preview\": msg.payload.nbrDaysPreview,\n            \"roomConf\": msg.payload,\n            \"status\": { fill: \"green\", shape: \"dot\", text: `Room queue size : ${roomsQueue.length}` }\n        }\n    }\n    else {\n        //node.warn(\"Other message, Queue\");\n        roomsQueue.push(msg.payload);\n        flow.set('f_roomsQueue', roomsQueue);\n    }\n}\n\n////////////////// Unqueue ////////////////\nelse if (msg.action === \"unqueue\") {\n    if (roomsQueue.length === 0) {\n        flow.set('f_initialStart', true);\n        //node.warn(\"Unqueue with lenght == 0, initialStart = true\");\n    }\n    else {\n        let newRoom = roomsQueue.shift();\n        flow.set('f_roomsQueue', roomsQueue);\n        //node.warn(\"Unqueue\");\n        return {\n            \"url\": newRoom.url,\n            \"timezone\": newRoom.timeZone,\n            \"preview\": msg.payload.nbrDaysPreview,\n            \"roomConf\": newRoom,\n            \"status\": { fill: \"green\", shape: \"dot\", text: `Room queue size : ${roomsQueue.length}` }\n        }\n    }\n}\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "let roomsQueue = [];\nflow.set('f_roomsQueue', roomsQueue);\n\nlet initialStart = true;\nflow.set('f_initialStart', initialStart);\n",
+        "finalize": "",
+        "libs": [],
+        "x": 410,
+        "y": 120,
+        "wires": [
+            [
+                "2bfed67f14dd5802"
+            ]
+        ]
+    },
+    {
+        "id": "2bfed67f14dd5802",
+        "type": "ical-upcoming",
+        "z": "14f091f3eb70505e",
+        "g": "45685cf62e646d04",
+        "confignode": "90b0640636b3bfc5",
+        "timeout": "",
+        "timeoutUnits": "seconds",
+        "cron": "",
+        "name": "Get Room calendar",
+        "offsettype": "",
+        "offset": "",
+        "offsetUnitstype": "",
+        "offsetUnits": "",
+        "eventtypes": "events",
+        "eventtypestype": "eventtypes",
+        "calendar": "",
+        "calendartype": "str",
+        "triggertype": "trigger",
+        "trigger": "always",
+        "timezone": "",
+        "timezonetype": "str",
+        "dateformat": "{ \"timeStyle\": \"short\", \"dateStyle\": \"short\" }",
+        "dateformattype": "json",
+        "language": "en",
+        "languagetype": "language",
+        "filterProperty": "summary",
+        "filterPropertytype": "filterProperty",
+        "filterOperator": "between",
+        "filterOperatortype": "filterOperator",
+        "filtertype": "str",
+        "filter2type": "str",
+        "filter2": "",
+        "filter": "",
+        "checkall": false,
+        "endpreview": "",
+        "endpreviewUnits": "",
+        "previewtype": "num",
+        "preview": "20",
+        "previewUnitstype": "previewUnits",
+        "previewUnits": "days",
+        "pastviewtype": "num",
+        "pastview": "0",
+        "pastviewUnits": "days",
+        "pastviewUnitstype": "pastviewUnits",
+        "x": 630,
+        "y": 120,
+        "wires": [
+            [
+                "650cb6221e01f9e4"
+            ]
+        ]
+    },
+    {
+        "id": "650cb6221e01f9e4",
+        "type": "function",
+        "z": "14f091f3eb70505e",
+        "g": "45685cf62e646d04",
+        "name": "Error Handle",
+        "func": "let roomConf = msg.roomConf;\nlet errorIcalTab = global.get('g_errorIcalTab');\n\nlet status = msg.error ? false : true;\n\nlet since;\nif (errorIcalTab[roomConf.scheduleID] == undefined){\n    since = (new Date()).toLocaleString(\"fr-FR\", { timeZone: \"Europe/Paris\" });\n} else if (status != errorIcalTab[roomConf.scheduleID][\"Status\"] ){\n    since = (new Date()).toLocaleString(\"fr-FR\", { timeZone: \"Europe/Paris\" });\n}else {\n    since = errorIcalTab[roomConf.scheduleID][\"Since\"];\n}\n\nlet roomName = roomConf.scheduleName;\n\nlet lastError = \"\";\nif ((msg.error + \"\").includes(\"ENOTFOUND\")) {\n    lastError = \"ENOTFOUND\";\n} else if ((msg.error + \"\").includes(\"ECONNRESET\")) {\n    lastError = \"ECONNRESET\";\n} else if ((msg.error + \"\").includes(\"ERROR 404\")) {\n    lastError = \"ERROR 404\";\n} else if ((msg.error + \"\").includes(\"ETIMEDOUT\")) {\n    lastError = \"ETIMEDOUT\";\n} else if ((msg.error + \"\").includes(\"ERROR 500\")) {\n    lastError = \"ERROR 500\";\n} else if (msg.error) {\n    lastError = \"OTHER\";\n} else {\n    lastError = errorIcalTab[roomConf.scheduleID]?.[\"Last Error\"] ?? \"Never Happenned\";\n}\n\nlet totalErrorTolal;\nif (msg.error) {\n    totalErrorTolal = (errorIcalTab[roomConf.scheduleID]?.[\"Total errors\"] ?? 0) + 1;\n}\nelse {\n    totalErrorTolal = (errorIcalTab[roomConf.scheduleID]?.[\"Total errors\"] ?? 0);\n}\n\nerrorIcalTab[roomConf.scheduleID] = {\n    \"Status\": status,\n    \"Since\" : since,\n    \"Room Name\": roomConf.scheduleName,\n    \"Last Error\": lastError,\n    \"Total errors\": totalErrorTolal\n};\n\n\nglobal.set('g_errorIcalTab', errorIcalTab);\n\nif (msg.error) {\n    return [null, msg];\n}\nelse {\n    return [msg, null];\n}\n\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\n//let errorIcalObj = {};\nlet errorIcalTab = [];\n//global.set('g_errorIcalObj', errorIcalObj);\nglobal.set('g_errorIcalTab', errorIcalTab);\n\n",
+        "finalize": "",
+        "libs": [],
+        "x": 840,
+        "y": 120,
+        "wires": [
+            [
+                "be5e5764e9643e59"
+            ],
+            [
+                "01c6092e55fc3605"
+            ]
+        ]
+    },
+    {
+        "id": "be5e5764e9643e59",
+        "type": "function",
+        "z": "14f091f3eb70505e",
+        "g": "45685cf62e646d04",
+        "name": "function 1",
+        "func": "//Function when no error happened\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1019.9999847412109,
+        "y": 81.00003623962402,
+        "wires": [
+            [
+                "01c6092e55fc3605"
+            ]
+        ]
+    },
+    {
+        "id": "0cf49c44bf20b4c4",
+        "type": "inject",
+        "z": "14f091f3eb70505e",
+        "g": "445191eba8d0e292",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "1",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "g_errorIcalTab",
+        "payloadType": "global",
+        "x": 460,
+        "y": 240,
+        "wires": [
+            [
+                "8924c006c5dd12ca"
+            ]
+        ]
+    },
+    {
+        "id": "c090f6917519a627",
+        "type": "ui-table",
+        "z": "14f091f3eb70505e",
+        "g": "445191eba8d0e292",
+        "group": "8cc02522cab7211b",
+        "name": "Status table",
+        "label": "",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "maxrows": 0,
+        "passthru": false,
+        "autocols": false,
+        "showSearch": false,
+        "deselect": false,
+        "selectionType": "none",
+        "columns": [
+            {
+                "title": "Status",
+                "key": "Status",
+                "keyType": "key",
+                "type": "tickcross",
+                "width": "",
+                "align": "center"
+            },
+            {
+                "title": "Since",
+                "key": "Since",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "center"
+            },
+            {
+                "title": "Room Name",
+                "key": "Room Name",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "center"
+            },
+            {
+                "title": "Last Error",
+                "key": "Last Error",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "center"
+            },
+            {
+                "title": "Total errors",
+                "key": "Total errors",
+                "keyType": "key",
+                "type": "text",
+                "width": "",
+                "align": "center"
+            }
+        ],
+        "mobileBreakpoint": "sm",
+        "mobileBreakpointType": "defaults",
+        "action": "replace",
+        "x": 850,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8924c006c5dd12ca",
+        "type": "function",
+        "z": "14f091f3eb70505e",
+        "g": "445191eba8d0e292",
+        "name": "Filter",
+        "func": "\n//node.warn(msg.payload);\n\nreturn {\n    payload : msg.payload.filter(element => element != undefined)\n   // payload : 10\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 240,
+        "wires": [
+            [
+                "c090f6917519a627"
+            ]
+        ]
+    },
+    {
+        "id": "8cc02522cab7211b",
+        "type": "ui-group",
+        "z": "14f091f3eb70505e",
+        "name": "ADE Server Status",
+        "page": "42676bdb99655b5b",
+        "width": 6,
+        "height": 1,
+        "order": -1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "b195be83fc795695",
+        "type": "junction",
+        "z": "14f091f3eb70505e",
+        "g": "45685cf62e646d04",
+        "x": 299.99998474121094,
+        "y": 121.00003623962402,
+        "wires": [
+            [
+                "78cfb1c01f753b75"
+            ]
+        ]
+    },
+    {
+        "id": "45685cf62e646d04",
+        "type": "group",
+        "z": "14f091f3eb70505e",
+        "name": "Create events",
+        "style": {
+            "fill": "#bfdbef",
+            "label": true,
+            "label-position": "n",
+            "color": "#000000"
+        },
+        "nodes": [
+            "6fbd3d754b7d39eb",
+            "01c6092e55fc3605",
+            "78cfb1c01f753b75",
+            "2bfed67f14dd5802",
+            "650cb6221e01f9e4",
+            "be5e5764e9643e59",
+            "b195be83fc795695"
+        ],
+        "x": 114,
+        "y": 40.00003623962402,
+        "w": 1171.999984741211,
+        "h": 122
+    },
+    {
+        "id": "445191eba8d0e292",
+        "type": "group",
+        "z": "14f091f3eb70505e",
+        "name": "For DEBUG",
+        "style": {
+            "label": true,
+            "label-position": "n",
+            "color": "#000000"
+        },
+        "nodes": [
+            "0cf49c44bf20b4c4",
+            "c090f6917519a627",
+            "8924c006c5dd12ca"
+        ],
+        "x": 314,
+        "y": 199,
+        "w": 632,
+        "h": 82
+    },
+    {
+        "id": "42676bdb99655b5b",
+        "type": "ui-page",
+        "name": "LoRaBAC Dashboard",
+        "ui": "99c65e96a09d62e2",
+        "path": "/status",
+        "icon": "Home",
+        "layout": "grid",
+        "theme": "fb411f2c74c271ac",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "99c65e96a09d62e2",
+        "type": "ui-base",
+        "name": "My Dashboard",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": true
+    },
+    {
+        "id": "fb411f2c74c271ac",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
         "id": "06caa6a694a2292a",
         "type": "subflow",
         "name": "scheduleAV update",
@@ -410,7 +867,7 @@
         "finalize": "",
         "libs": [],
         "x": 590,
-        "y": 620,
+        "y": 660,
         "wires": [
             [
                 "d5b5679c5aca42eb"
@@ -435,7 +892,7 @@
         "senderr": false,
         "headers": [],
         "x": 830,
-        "y": 620,
+        "y": 660,
         "wires": [
             []
         ]
@@ -605,15 +1062,15 @@
         "type": "function",
         "z": "5dbb742ee17c0ff3",
         "g": "c3f92ca09dc208e5",
-        "name": "All rooms process time",
-        "func": "let roomInfo = msg.roomInfo;\nlet msgCorrect = false;\n\nlet icalToScheduleConf = flow.get('sf_icalToScheduleConf');\n\n\nswitch (msg.statusCode) {\n    case 200:\n        msgCorrect = true;\n        break;\n    case 400:\n        node.error(\"Error 400: Bad HTTP Request\");\n        if (msg.payload.includes(\"write-access-denied\")) {\n            node.error(\"Error: Trying to write a Read Only object (analogInput)\");\n        }\n        break;\n    case 401:\n        node.error(\"Error 401: Can't connect to controller: Authorization error\");\n        break;\n    case 500:\n        node.error(\"Error 500: Server Error 500\");\n        break;\n    case 404:\n        node.error(`Error 404 : Schedule ${msg.roomConf.scheduleName} doesn't exist `);\n        break;\n    case \"ETIMEDOUT\":\n        node.error(\"Error: Can't connect to controller: TimeOut\");\n        break;\n    case 501:\n        node.error(\"Error 501. Not recognized request methode. Server not capable of supporting it for any resource\")\n        break;\n    case \"ENOTFOUND\":\n        node.error(\"RequestError: no url found. Please correct the url\")\n}\n\n\nicalToScheduleConf.roomCounter++;\n//node.warn(\"Room counter : \" +  icalToScheduleConf.roomCounter);\n//node.warn(\"NB Room : \" +  icalToScheduleConf.nbActiveRooms);\nif(icalToScheduleConf.roomCounter % icalToScheduleConf.controlledByEventFromIcalNbr == 0){\n    node.warn(`${icalToScheduleConf.controlledByEventFromIcalNbr} rooms processed in ${(Date.now() - icalToScheduleConf.startTimeUpdateSchedule) / 1000} s`);\n    node.status({ fill: \"green\", shape: \"dot\", text: `Process time : ${(Date.now() - icalToScheduleConf.startTimeUpdateSchedule) / 1000} s`});\n    icalToScheduleConf.startTimeUpdateSchedule =  Date.now();\n}\n\nflow.set('sf_icalToScheduleConf',icalToScheduleConf);\n\nmsg.action = \"unqueue\";\nreturn msg;\n",
+        "name": "Unqueue",
+        "func": "let icalToScheduleConf = flow.get('sf_icalToScheduleConf');\n\nicalToScheduleConf.roomCounter++;\n\nif(icalToScheduleConf.roomCounter % icalToScheduleConf.controlledByEventFromIcalNbr == 0){\n    node.warn(`${icalToScheduleConf.controlledByEventFromIcalNbr} rooms processed in ${(Date.now() - icalToScheduleConf.startTimeUpdateSchedule) / 1000} s`);\n    node.status({ fill: \"green\", shape: \"dot\", text: `Process time : ${(Date.now() - icalToScheduleConf.startTimeUpdateSchedule) / 1000} s`});\n    icalToScheduleConf.startTimeUpdateSchedule =  Date.now();\n}\n\nflow.set('sf_icalToScheduleConf',icalToScheduleConf);\n\nmsg.action = \"unqueue\";\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "//flow.set('f_isControllerReady', true);\n",
         "finalize": "",
         "libs": [],
-        "x": 1180,
+        "x": 1200,
         "y": 460,
         "wires": [
             [
@@ -627,7 +1084,7 @@
         "z": "5dbb742ee17c0ff3",
         "g": "c3f92ca09dc208e5",
         "name": "Room Queue",
-        "func": "let roomsQueue = flow.get('f_roomsQueue');\nconst maxQueueSize = 150;\n\n\n//node.status({ fill: \"green\", shape: \"dot\", text: `Queue size : ${roomsQueue.length} ` });\n//node.warn(roomsQueue);\n//node.warn(roomsQueue.length);\n\n////////////////// Queue ////////////////\nif (msg.action === \"queue\") {\n    if (roomsQueue.length >= maxQueueSize) {\n        //node.status({ fill: \"red\", shape: \"dot\", text: `Queue overflow (max : ${maxQueueSize})} ` });\n        node.error(`Room queue has exeeded its maximum size ${maxQueueSize}`);\n        return null;\n\n\n\n    }\n    else if (roomsQueue.length == 0 && flow.get('f_initialStart')) {\n        // First message, no need to queue.\n        flow.set('f_initialStart', false);\n        node.warn(\"Creating events for each room...\");\n        return {\n            \"url\": msg.payload.url,\n            \"timezone\": msg.payload.timeZone,\n            \"preview\": msg.payload.nbrDaysPreview,\n            \"roomConf\": msg.payload,\n            \"status\": { fill: \"green\", shape: \"dot\", text: `Room queue size : ${roomsQueue.length}` }\n\n        }\n    }\n    else {\n        //node.warn(\"Other message, Queue\");\n        roomsQueue.push(msg.payload);\n        flow.set('f_roomsQueue', roomsQueue);\n    }\n}\n\n////////////////// Unqueue ////////////////\nelse if (msg.action === \"unqueue\") {\n    if (roomsQueue.length === 0) {\n        flow.set('f_initialStart', true);\n        //node.warn(\"Unqueue with lenght == 0, initialStart = true\");\n    }\n    else {\n        let newRoom = roomsQueue.shift();\n        flow.set('f_roomsQueue', roomsQueue);\n        //node.warn(\"Unqueue\");\n        return {\n            \"url\": newRoom.url,\n            \"timezone\": newRoom.timeZone,\n            \"preview\": msg.payload.nbrDaysPreview,\n            \"roomConf\": newRoom,\n            \"status\": { fill: \"green\", shape: \"dot\", text: `Room queue size : ${roomsQueue.length}` }\n        }\n    }\n}\n\n",
+        "func": "let roomsQueue = flow.get('f_roomsQueue');\nconst maxQueueSize = 150;\n\n\n//node.status({ fill: \"green\", shape: \"dot\", text: `Queue size : ${roomsQueue.length} ` });\n//node.warn(roomsQueue);\n//node.warn(roomsQueue.length);\n\n////////////////// Queue ////////////////\nif (msg.action === \"queue\") {\n    if (roomsQueue.length >= maxQueueSize) {\n        //node.status({ fill: \"red\", shape: \"dot\", text: `Queue overflow (max : ${maxQueueSize})} ` });\n        node.error(`Room queue has exeeded its maximum size ${maxQueueSize}`);\n        return null;\n    }\n    else if (roomsQueue.length == 0 && flow.get('f_initialStart')) {\n        // First message, no need to queue.\n        flow.set('f_initialStart', false);\n        node.warn(\"Creating events for each room...\");\n        return {\n            \"url\": msg.payload.url,\n            \"timezone\": msg.payload.timeZone,\n            \"preview\": msg.payload.nbrDaysPreview,\n            \"roomConf\": msg.payload,\n            \"status\": { fill: \"green\", shape: \"dot\", text: `Room queue size : ${roomsQueue.length}` }\n\n        }\n    }\n    else {\n        //node.warn(\"Other message, Queue\");\n        roomsQueue.push(msg.payload);\n        flow.set('f_roomsQueue', roomsQueue);\n    }\n}\n\n////////////////// Unqueue ////////////////\nelse if (msg.action === \"unqueue\") {\n    if (roomsQueue.length === 0) {\n        flow.set('f_initialStart', true);\n        //node.warn(\"Unqueue with lenght == 0, initialStart = true\");\n    }\n    else {\n        let newRoom = roomsQueue.shift();\n        flow.set('f_roomsQueue', roomsQueue);\n        //node.warn(\"Unqueue\");\n        return {\n            \"url\": newRoom.url,\n            \"timezone\": newRoom.timeZone,\n            \"preview\": msg.payload.nbrDaysPreview,\n            \"roomConf\": newRoom,\n            \"status\": { fill: \"green\", shape: \"dot\", text: `Room queue size : ${roomsQueue.length}` }\n        }\n    }\n}\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -659,7 +1116,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 990,
+        "x": 1030,
         "y": 460,
         "wires": [
             [
@@ -712,7 +1169,7 @@
         "pastview": "0",
         "pastviewUnits": "days",
         "pastviewUnitstype": "pastviewUnits",
-        "x": 610,
+        "x": 630,
         "y": 460,
         "wires": [
             [
@@ -733,7 +1190,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 820,
+        "x": 860,
         "y": 460,
         "wires": [
             [
@@ -973,7 +1430,7 @@
         ],
         "x": 114,
         "y": 419,
-        "w": 1192,
+        "w": 1172,
         "h": 82
     },
     {
@@ -991,7 +1448,7 @@
             "d5b5679c5aca42eb"
         ],
         "x": 454,
-        "y": 579,
+        "y": 619,
         "w": 452,
         "h": 82
     },
@@ -1069,12 +1526,13 @@
             "3020ce83a28a56af",
             "a983afd50cbd9ec9",
             "0b29934553d7c1e4",
-            "e6fe0c0fedc1e79e"
+            "e6fe0c0fedc1e79e",
+            "0bf3541841d92d69"
         ],
         "x": 194,
-        "y": 59,
+        "y": 39,
         "w": 872,
-        "h": 182
+        "h": 202
     },
     {
         "id": "3020ce83a28a56af",
@@ -1082,7 +1540,7 @@
         "z": "7f657f2f68fed6cd",
         "g": "2bdeaa9207e91a2e",
         "name": "TO CONFIGURE",
-        "func": "//////////////////////////////////////////////\n//////////////// TO CONFIGURE ////////////////\n//////////////////////////////////////////////\n\nconst printMissingDevice = false;\nconst defaultControl = \"controlledByEventFromIcal\"; //  controlledByEventFromIcal, controlledBySchedule, controlledByConstant, inactive\n\n// 1. Create BACnet Schedule\nconst timeBetweenScheduleUpdate = 60 * 20;    // Seconds, Time to refresh calendar events\nconst scheduleInstanceRange = [0, 50];\nconst groupEvents = true;               // Group events in 1 event/day\nconst timeZone = 'Europe/Paris';        // What are the other options ?\nconst eventsToDiscard = [\"SOBRIETE ENERGETIQUE\"]; // all events that content this string in their description will be ignored\nconst defaultTempOccupied = 20;\nconst defaultTempUnoccupied = 15;\nconst defaultTimeOffsetBeforeStart = 120;            // in mins\nconst defaultTimeOffsetBeforeEnd = 30;              // in mins\nconst defaultNbrDaysPreview = 10;                   // Days, max is defined in the \"Get Room Calendar\" node.\nconst defaultAddSuffixToAdeURL = true;\nconst minimumSlotDuration = 0;                     // in mins\n\n// 2. Analog value for each schedule\nconst scheduleAVInstanceOffset = 10000;  //  The starting instance of theses values\nconst timeBetweenScheduleAVUpdate = 30; //   Seconds\n\n// Info : \n// * minimumSlotDuration is only checked when groupEvents = false.\n// * defaultTimeOffsetBeforeStart and defaultTimeOffsetBeforeEnd are only applied when groupEvents = true.\n// * eventsToDiscard is always appliead whatever groupsEvents value.\n// * control : \n//          controlledByEventFromIcal : createSchedule, add event, create scheduleAV, create Bindings.\n//          controlledBySchedule :      createSchedule,            create scheduleAV, create Bindings.\n//          controlledByConstant :                                 create scheduleAV, create Bindings.\n//          Inactive : Rien.\n\n\n/////////////////////////////\n///// Rooms Informations  ///\n/////////////////////////////\n\n/* Room Template \n{\n    // Mandatory //\n    \"scheduleName\": \"roomName0\",\n    \"devices\": { \"device-1\": { \"deviceNums\": [1, 2, 3], \"AVToBindName\": \"controllerSetpoint\" } },\n    \"url\": 'https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=1480&projectId=5&calType=ical&lastDate=2042-08-14',\n    \n    // Optionnal, if not specified the default value will be applied //\n    \"control\": [ controlledByEventFromIcal, controlledBySchedule, controlledByConstant, inactive ]\n    \"nbrDaysPreview\" : defaultNbrDaysPreview,\n    \"tempOccupied\": defaultTempOccupied,\n    \"tempUnoccupied\": defaultTempUnoccupied,\n    \"timeOffsetBeforeStart\": defaultTimeOffsetBeforeStart,\n    \"timeOffsetBeforeEnd\": defaultTimeOffsetBeforeEnd\n*/\n\n\nlet rooms = [\n];\n\n\n/////////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////////\n/////////////////////////////////////////////////\nconst controlSet = [\"controlledByEventFromIcal\", \"controlledBySchedule\", \"controlledByConstant\", \"inactive\"];\nconst deviceList = global.get('g_deviceList');    // From LoRaBAC node\n\nif (rooms.length === 0) {\n    node.error(`No Room configuration available`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nif (!deviceList) {\n    node.error(`Device List missing from LoRaBAC node`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nfor (let device in deviceList) {\n    if (Object.keys(deviceList).some(dev => deviceList[dev].controller.ipAddress != deviceList[device].controller.ipAddress)) {\n        node.error(`Controller IP Address are not all the same in device list`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n}\n\nif (scheduleInstanceRange[0] > scheduleInstanceRange[1] || scheduleInstanceRange.length !== 2) {\n    node.error(`Wrong Schedule instance range`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nif (Object.keys(rooms).length > (scheduleInstanceRange[1] - scheduleInstanceRange[0] + 1)) {\n    node.error(`Too many rooms, increase Schedule Instance Range`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\n\nconst scheduleNames = rooms.map(room => room.scheduleName);\nif (new Set(scheduleNames).size !== scheduleNames.length) {\n    node.error(`Duplicate ScheduleName in room configuration`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nlet scheduleID = 0;\nlet deviceNums = {};\n\n\nfor (let room in rooms) {\n\n    rooms[room].scheduleID = scheduleID++;\n\n    if (!rooms[room].hasOwnProperty(\"scheduleName\")) {\n        node.error(`One room  has no scheduleName in room configuration`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"devices\")) {\n        node.error(`Room  ${rooms[room].scheduleName} has no devices`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"control\")) {\n        rooms[room].control = defaultControl;\n    }\n\n    if (!controlSet.some(element => element == rooms[room].control)) {\n        node.error(`Room  ${rooms[room].scheduleName} control mode doesn't exist`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"url\") && rooms[room].control === \"controlledByEventFromIcal\") {\n        node.error(`Room  ${rooms[room].scheduleName} has no url`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].url && rooms[room].control === \"controlledByEventFromIcal\") {\n        node.error(`url falsy value for ${rooms[room].scheduleName}`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (rooms[room].scheduleID > scheduleInstanceRange[1]) {\n        node.error(`Room ${rooms[room].scheduleName} has a scheduleID over the allocated range (${scheduleInstanceRange[1]}) `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n\n\n    for (let device in rooms[room].devices) {\n        deviceNums[device] = (deviceNums[device] || []).concat(rooms[room].devices[device].deviceNums);\n        //node.warn(deviceNums);\n\n        if (!Object.keys(deviceList).some(deviceType => deviceType == device)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device type that doesn't belong to the device list`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        }\n\n        if (!Object.keys(deviceList[device].bacnet.objects).some(object => object == rooms[room].devices[device].AVToBindName)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device with AVToBindName (${rooms[room].devices[device].AVToBindName}) that doesn't exist in the device List`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        } else if (deviceList[device].bacnet.objects[rooms[room].devices[device].AVToBindName].dataDirection !== \"downlink\") {\n            node.error(`${rooms[room].devices[device].AVToBindName} can't be an AVToBindName because it is not a downlink object in ${device}`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n\n        }\n        rooms[room].devices[device].deviceNums\n        if (rooms[room].devices[device].deviceNums.some(numDevice => numDevice > deviceList[device].identity.maxDevNum)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device number that exceed the maximum (${deviceList[device].identity.maxDevNum}) for device type ${device}`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        }\n\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeZone\")) {\n        rooms[room].timeZone = timeZone;\n    }\n    if (!rooms[room].timeZone) {\n        node.error(`timeZone falsy value for ${rooms[room].scheduleName} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempUnoccupied\")) {\n        rooms[room].tempUnoccupied = defaultTempUnoccupied;\n    }\n    if (!rooms[room].tempUnoccupied) {\n        node.error(`tempUnoccupied falsy value : ${rooms[room].tempUnoccupied} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempOccupied\")) {\n        rooms[room].tempOccupied = defaultTempOccupied;\n    }\n    if (!rooms[room].tempOccupied) {\n        node.error(`tempOccupied falsy value : ${rooms[room].tempOccupied} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeOffsetBeforeStart\")) {\n        rooms[room].timeOffsetBeforeStart = defaultTimeOffsetBeforeStart;\n    }\n    if (!rooms[room].timeOffsetBeforeStart) {\n        node.error(`timeOffsetBeforeStart falsy value : ${rooms[room].timeOffsetBeforeStart} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeOffsetBeforeEnd\")) {\n        rooms[room].timeOffsetBeforeEnd = defaultTimeOffsetBeforeEnd;\n    }\n    if (!rooms[room].timeOffsetBeforeEnd) {\n        node.error(`timeOffsetBeforeEnd falsy value : ${rooms[room].timeOffsetBeforeEnd} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"nbrDaysPreview\")) {\n        rooms[room].nbrDaysPreview = defaultNbrDaysPreview;\n    }\n    if (!rooms[room].nbrDaysPreview) {\n        node.error(`nbrDaysPreview falsy value : ${rooms[room].nbrDaysPreview} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"addSuffixToAdeURL\")) {\n        rooms[room].addSuffixToAdeURL = defaultAddSuffixToAdeURL;\n    }\n\n\n    if (rooms[room].addSuffixToAdeURL && rooms[room].control === \"controlledByEventFromIcal\") {\n        const date = new Date();\n        date.setDate(date.getDate() + rooms[room].nbrDaysPreview);\n        let adeSuffixe = date.toISOString().slice(0, 10)\n        if (rooms[room].url.includes(\"&lastDate\")) {\n            rooms[room].url = rooms[room].url.replace(/&lastDate=\\d{4}-\\d{2}-\\d{2}/, `&lastDate=${adeSuffixe}`);\n        }\n        else {\n            rooms[room].url += `&lastDate=${adeSuffixe}`;\n        }\n    }\n}\n\n\nlet missingDev = \"INFO : Missing devices : \";\nfor (let device in deviceNums) {\n    const deviceNumSet = new Set(deviceNums[device]);\n\n    if (deviceNumSet.size !== deviceNums[device].length) {\n        node.error(`${device} as duplicate device Numbers in the configuration`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    missingDev += device + \" : \";\n    for (let i = 1; i < Math.max(...deviceNumSet); i++) {\n        if (!Array.from(deviceNumSet).some(element => element == i)) {\n            missingDev += i + \", \";\n        }\n    }\n}\n\nif (printMissingDevice) {\n    node.warn(missingDev);\n}\n\n\nnode.status({ fill: \"green\", shape: \"dot\", text: `Configuration OK` });\n\nfor (let device in deviceList) {\n    const buffer = Buffer.from(deviceList[device].controller.login + ':' + deviceList[device].controller.password);\n    deviceList[device].controller.httpAuthentication = \"Basic \" + buffer.toString('base64');\n}\n\n// Store variables\n/*let icalToScheduleConf = {\n    controllerIPAddress: deviceList[Object.keys(deviceList)[0]].controller.ipAddress,\n    controllerLogin: deviceList[Object.keys(deviceList)[0]].controller.login,\n    controllerPassword: deviceList[Object.keys(deviceList)[0]].controller.password,\n    httpAuthentication: deviceList[Object.keys(deviceList)[0]].controller.httpAuthentication,\n    timeBetweenScheduleUpdate: timeBetweenScheduleUpdate,\n    timeBetweenScheduleAVUpdate: timeBetweenScheduleAVUpdate,\n    defaultTimeOffsetBeforeStart: defaultTimeOffsetBeforeStart,\n    defaultTimeOffsetBeforeEnd: defaultTimeOffsetBeforeEnd,\n    scheduleInstanceRange: scheduleInstanceRange,\n    groupEvents: groupEvents,\n    timeZone: timeZone,\n    eventsToDiscard: eventsToDiscard,\n    scheduleAVInstanceOffset: scheduleAVInstanceOffset,\n    minimumSlotDuration: minimumSlotDuration,\n}*/\n\nlet icalToScheduleConf = {\n    controllerIPAddress: deviceList[Object.keys(deviceList)[0]].controller.ipAddress,\n    controllerLogin: deviceList[Object.keys(deviceList)[0]].controller.login,\n    controllerPassword: deviceList[Object.keys(deviceList)[0]].controller.password,\n    httpAuthentication: deviceList[Object.keys(deviceList)[0]].controller.httpAuthentication,\n    timeBetweenScheduleUpdate: timeBetweenScheduleUpdate,\n    timeBetweenScheduleAVUpdate: timeBetweenScheduleAVUpdate,\n    defaultTimeOffsetBeforeStart: defaultTimeOffsetBeforeStart,     // To remove ?\n    defaultTimeOffsetBeforeEnd: defaultTimeOffsetBeforeEnd,         // To remove ?\n    scheduleInstanceRange: scheduleInstanceRange,\n    groupEvents: groupEvents,\n    timeZone: timeZone,                                             // To remove ?\n    eventsToDiscard: eventsToDiscard,\n    scheduleAVInstanceOffset: scheduleAVInstanceOffset,\n    minimumSlotDuration: minimumSlotDuration,\n}\n\nflow.set('f_icalToScheduleConf', icalToScheduleConf); // For Debug section only (to reach the BMS IP address)\n//flow.set('f_rooms', rooms);\n\nreturn msg = {\n    icalToScheduleConf: icalToScheduleConf,\n    rooms: rooms\n};\n\n\n",
+        "func": "//////////////////////////////////////////////\n//////////////// TO CONFIGURE ////////////////\n//////////////////////////////////////////////\n\nconst printMissingDevice = false;\nconst defaultControl = \"controlledByEventFromIcal\"; //  controlledByEventFromIcal, controlledBySchedule, controlledByConstant, inactive\n\n// 1. Create BACnet Schedule\nconst timeBetweenScheduleUpdate = 60 * 20;    // Seconds, Time to refresh calendar events\nconst scheduleInstanceRange = [0, 50];\nconst groupEvents = true;               // Group events in 1 event/day\nconst timeZone = 'Europe/Paris';        // What are the other options ?\nconst eventsToDiscard = [\"SOBRIETE ENERGETIQUE\"]; // all events that content this string in their description will be ignored\nconst defaultTempOccupied = 20;\nconst defaultTempUnoccupied = 15;\nconst defaultTimeOffsetBeforeStart = 120;            // in mins\nconst defaultTimeOffsetBeforeEnd = 30;              // in mins\nconst defaultNbrDaysPreview = 10;                   // Days, max is defined in the \"Get Room Calendar\" node.\nconst defaultAddSuffixToAdeURL = true;\nconst minimumSlotDuration = 0;                     // in mins\n\n// 2. Analog value for each schedule\nconst scheduleAVInstanceOffset = 10000;  //  The starting instance of theses values\nconst timeBetweenScheduleAVUpdate = 30; //   Seconds\n\n// Info : \n// * minimumSlotDuration is only checked when groupEvents = false.\n// * defaultTimeOffsetBeforeStart and defaultTimeOffsetBeforeEnd are only applied when groupEvents = true.\n// * eventsToDiscard is always appliead whatever groupsEvents value.\n// * control : \n//          controlledByEventFromIcal : createSchedule, add event, create scheduleAV, create Bindings.\n//          controlledBySchedule :      createSchedule,            create scheduleAV, create Bindings.\n//          controlledByConstant :                                 create scheduleAV, create Bindings.\n//          Inactive : Rien.\n\n\n/////////////////////////////\n///// Rooms Informations  ///\n/////////////////////////////\n\n/* Room Template \n{\n    // Mandatory //\n    \"scheduleName\": \"roomName0\",\n    \"devices\": { \"device-1\": { \"deviceNums\": [1, 2, 3], \"AVToBindName\": \"controllerSetpoint\" } },\n    \"url\": 'https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=1480&projectId=5&calType=ical&lastDate=2042-08-14',\n    \n    // Optionnal, if not specified the default value will be applied //\n    \"control\": [ controlledByEventFromIcal, controlledBySchedule, controlledByConstant, inactive ]\n    \"nbrDaysPreview\" : defaultNbrDaysPreview,\n    \"tempOccupied\": defaultTempOccupied,\n    \"tempUnoccupied\": defaultTempUnoccupied,\n    \"timeOffsetBeforeStart\": defaultTimeOffsetBeforeStart,\n    \"timeOffsetBeforeEnd\": defaultTimeOffsetBeforeEnd,\n    \"addSuffixToAdeURL\" : defaultAddSuffixToAdeURL\n*/\n\n\nlet rooms = [\n];\n\n\n/////////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////////\n/////////////////////////////////////////////////\nconst controlSet = [\"controlledByEventFromIcal\", \"controlledBySchedule\", \"controlledByConstant\", \"inactive\"];\nconst deviceList = global.get('g_deviceList');    // From LoRaBAC node\n\nif (rooms.length === 0) {\n    node.error(`No Room configuration available`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nif (!deviceList) {\n    node.error(`Device List missing from LoRaBAC node`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nfor (let device in deviceList) {\n    if (Object.keys(deviceList).some(dev => deviceList[dev].controller.ipAddress != deviceList[device].controller.ipAddress)) {\n        node.error(`Controller IP Address are not all the same in device list`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n}\n\nif (scheduleInstanceRange[0] > scheduleInstanceRange[1] || scheduleInstanceRange.length !== 2) {\n    node.error(`Wrong Schedule instance range`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nif (Object.keys(rooms).length > (scheduleInstanceRange[1] - scheduleInstanceRange[0] + 1)) {\n    node.error(`Too many rooms, increase Schedule Instance Range`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\n\nconst scheduleNames = rooms.map(room => room.scheduleName);\nif (new Set(scheduleNames).size !== scheduleNames.length) {\n    node.error(`Duplicate ScheduleName in room configuration`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nlet scheduleID = 0;\nlet deviceNums = {};\n\n\nfor (let room in rooms) {\n\n    rooms[room].scheduleID = scheduleID++;\n\n    if (!rooms[room].hasOwnProperty(\"scheduleName\")) {\n        node.error(`One room  has no scheduleName in room configuration`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"devices\")) {\n        node.error(`Room  ${rooms[room].scheduleName} has no devices`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"control\")) {\n        rooms[room].control = defaultControl;\n    }\n\n    if (!controlSet.some(element => element == rooms[room].control)) {\n        node.error(`Room  ${rooms[room].scheduleName} control mode doesn't exist`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"url\") && rooms[room].control === \"controlledByEventFromIcal\") {\n        node.error(`Room  ${rooms[room].scheduleName} has no url`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].url && rooms[room].control === \"controlledByEventFromIcal\") {\n        node.error(`url falsy value for ${rooms[room].scheduleName}`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (rooms[room].scheduleID > scheduleInstanceRange[1]) {\n        node.error(`Room ${rooms[room].scheduleName} has a scheduleID over the allocated range (${scheduleInstanceRange[1]}) `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n\n\n    for (let device in rooms[room].devices) {\n        deviceNums[device] = (deviceNums[device] || []).concat(rooms[room].devices[device].deviceNums);\n        //node.warn(deviceNums);\n\n        if (!Object.keys(deviceList).some(deviceType => deviceType == device)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device type that doesn't belong to the device list`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        }\n\n        if (!Object.keys(deviceList[device].bacnet.objects).some(object => object == rooms[room].devices[device].AVToBindName)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device with AVToBindName (${rooms[room].devices[device].AVToBindName}) that doesn't exist in the device List`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        } else if (deviceList[device].bacnet.objects[rooms[room].devices[device].AVToBindName].dataDirection !== \"downlink\") {\n            node.error(`${rooms[room].devices[device].AVToBindName} can't be an AVToBindName because it is not a downlink object in ${device}`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n\n        }\n        rooms[room].devices[device].deviceNums\n        if (rooms[room].devices[device].deviceNums.some(numDevice => numDevice > deviceList[device].identity.maxDevNum)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device number that exceed the maximum (${deviceList[device].identity.maxDevNum}) for device type ${device}`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        }\n\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeZone\")) {\n        rooms[room].timeZone = timeZone;\n    }\n    if (!rooms[room].timeZone) {\n        node.error(`timeZone falsy value for ${rooms[room].scheduleName} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempUnoccupied\")) {\n        rooms[room].tempUnoccupied = defaultTempUnoccupied;\n    }\n    if (!rooms[room].tempUnoccupied) {\n        node.error(`tempUnoccupied falsy value : ${rooms[room].tempUnoccupied} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempOccupied\")) {\n        rooms[room].tempOccupied = defaultTempOccupied;\n    }\n    if (!rooms[room].tempOccupied) {\n        node.error(`tempOccupied falsy value : ${rooms[room].tempOccupied} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeOffsetBeforeStart\")) {\n        rooms[room].timeOffsetBeforeStart = defaultTimeOffsetBeforeStart;\n    }\n    if (!rooms[room].timeOffsetBeforeStart) {\n        node.error(`timeOffsetBeforeStart falsy value : ${rooms[room].timeOffsetBeforeStart} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeOffsetBeforeEnd\")) {\n        rooms[room].timeOffsetBeforeEnd = defaultTimeOffsetBeforeEnd;\n    }\n    if (!rooms[room].timeOffsetBeforeEnd) {\n        node.error(`timeOffsetBeforeEnd falsy value : ${rooms[room].timeOffsetBeforeEnd} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"nbrDaysPreview\")) {\n        rooms[room].nbrDaysPreview = defaultNbrDaysPreview;\n    }\n    if (!rooms[room].nbrDaysPreview) {\n        node.error(`nbrDaysPreview falsy value : ${rooms[room].nbrDaysPreview} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"addSuffixToAdeURL\")) {\n        rooms[room].addSuffixToAdeURL = defaultAddSuffixToAdeURL;\n    }\n\n\n    if (rooms[room].addSuffixToAdeURL && rooms[room].control === \"controlledByEventFromIcal\") {\n        const date = new Date();\n        date.setDate(date.getDate() + rooms[room].nbrDaysPreview);\n        let adeSuffixe = date.toISOString().slice(0, 10)\n        if (rooms[room].url.includes(\"&lastDate\")) {\n            rooms[room].url = rooms[room].url.replace(/&lastDate=\\d{4}-\\d{2}-\\d{2}/, `&lastDate=${adeSuffixe}`);\n        }\n        else {\n            rooms[room].url += `&lastDate=${adeSuffixe}`;\n        }\n    }\n}\n\n\nlet missingDev = \"INFO : Missing devices : \";\nfor (let device in deviceNums) {\n    const deviceNumSet = new Set(deviceNums[device]);\n\n    if (deviceNumSet.size !== deviceNums[device].length) {\n        node.error(`${device} as duplicate device Numbers in the configuration`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    missingDev += device + \" : \";\n    for (let i = 1; i < Math.max(...deviceNumSet); i++) {\n        if (!Array.from(deviceNumSet).some(element => element == i)) {\n            missingDev += i + \", \";\n        }\n    }\n}\n\nif (printMissingDevice) {\n    node.warn(missingDev);\n}\n\n\nnode.status({ fill: \"green\", shape: \"dot\", text: `Configuration OK` });\n\nfor (let device in deviceList) {\n    const buffer = Buffer.from(deviceList[device].controller.login + ':' + deviceList[device].controller.password);\n    deviceList[device].controller.httpAuthentication = \"Basic \" + buffer.toString('base64');\n}\n\n// Store variables\n\nlet icalToScheduleConf = {\n    controllerIPAddress: deviceList[Object.keys(deviceList)[0]].controller.ipAddress,\n    controllerLogin: deviceList[Object.keys(deviceList)[0]].controller.login,\n    controllerPassword: deviceList[Object.keys(deviceList)[0]].controller.password,\n    httpAuthentication: deviceList[Object.keys(deviceList)[0]].controller.httpAuthentication,\n    timeBetweenScheduleUpdate: timeBetweenScheduleUpdate,\n    timeBetweenScheduleAVUpdate: timeBetweenScheduleAVUpdate,\n    defaultTimeOffsetBeforeStart: defaultTimeOffsetBeforeStart,     // To remove ?\n    defaultTimeOffsetBeforeEnd: defaultTimeOffsetBeforeEnd,         // To remove ?\n    scheduleInstanceRange: scheduleInstanceRange,\n    groupEvents: groupEvents,\n    timeZone: timeZone,                                             // To remove ?\n    eventsToDiscard: eventsToDiscard,\n    scheduleAVInstanceOffset: scheduleAVInstanceOffset,\n    minimumSlotDuration: minimumSlotDuration,\n}\n\nflow.set('f_icalToScheduleConf', icalToScheduleConf); // For Debug section only (to reach the BMS IP address)\n//flow.set('f_rooms', rooms);\n\nreturn msg = {\n    icalToScheduleConf: icalToScheduleConf,\n    rooms: rooms\n};\n\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1094,7 +1552,8 @@
         "wires": [
             [
                 "0b29934553d7c1e4",
-                "e6fe0c0fedc1e79e"
+                "e6fe0c0fedc1e79e",
+                "0bf3541841d92d69"
             ]
         ],
         "icon": "node-red/cog.svg"
@@ -1427,7 +1886,7 @@
         "g": "2bdeaa9207e91a2e",
         "name": "Configuration",
         "x": 930,
-        "y": 100,
+        "y": 80,
         "wires": []
     },
     {
@@ -1529,6 +1988,16 @@
         "statusType": "auto",
         "x": 1020,
         "y": 520,
+        "wires": []
+    },
+    {
+        "id": "0bf3541841d92d69",
+        "type": "subflow:14f091f3eb70505e",
+        "z": "7f657f2f68fed6cd",
+        "g": "2bdeaa9207e91a2e",
+        "name": "",
+        "x": 950,
+        "y": 140,
         "wires": []
     },
     {
