@@ -412,7 +412,7 @@
                 "cols": "12"
             }
         ],
-        "order": 2,
+        "order": 1,
         "className": "",
         "visible": true,
         "disabled": false
@@ -1183,7 +1183,7 @@
         "z": "f33b48a9db5775f9",
         "g": "7c1c45391173e445",
         "name": "Create events",
-        "func": "let icalToScheduleConf = flow.get('sf_icalToScheduleConf');\nlet roomConf = msg.roomConf;\nlet eventNumber = msg.total;\nlet events = [/* {eventStart : Date , eventEnd : Date,, ...}*/];  // List of events to create.\nlet httpRequestEventList = {};\n\n///////////////////////////////////////////////////////////////////////\n/////////////////     Events manipulation  ////////////////////////////\n///////////////////////////////////////////////////////////////////////\n\nfunction eventCreation() {\n  for (let i = 0; i < eventNumber; i++) {\n    // Event are discarded according to their \"event description\" in the ics file.\n    if (!icalToScheduleConf.eventsToDiscard.some(discardStr => msg.payload[i].description?.includes(discardStr))) {\n\n      //////////  groupEvents == true   //////////////\n      if (icalToScheduleConf.groupEvents) {\n        let msgEventStart = new Date(msg.payload[i].eventStart);\n        let msgEventEnd = new Date(msg.payload[i].eventEnd);\n\n        // Check if an event with same year-date-time already exist in events[].\n        const idx = events.findIndex(evt => {\n          return (\n            msgEventStart.getDate() === evt.eventStart.getDate() &&\n            msgEventEnd.getMonth() === evt.eventStart.getMonth() &&\n            msgEventEnd.getFullYear() === evt.eventStart.getFullYear()\n          );\n        });\n\n        if (idx != -1) {    // Event with same year-date-time already exits\n\n          if (msgEventStart < events[idx].eventStart) events[idx].eventStart = msgEventStart; // Update start time\n          if (msgEventEnd > events[idx].eventEnd) events[idx].eventEnd = msgEventEnd;         // Update end time\n          //node.warn(\"idx : \" + idx);\n          //node.warn(events);\n        }\n        else {               // Add a new event\n          //node.warn(\"Event added\");\n          events.push(msg.payload[i]);\n          events.at(-1).eventStart = new Date(events.at(-1).eventStart);  // at(-1) = last index\n          events.at(-1).eventEnd = new Date(events.at(-1).eventEnd);      // at(-1) = last index\n          events.at(-1).summary = \"Merged Events\";\n          //node.warn(events);\n        }\n      }\n\n      //////////  groupEvents == false   //////////////\n      else {\n        //node.warn(\"Event added\");\n        events.push(msg.payload[i]);\n        events.at(-1).eventStart = new Date(events.at(-1).eventStart);  // at(-1) = last index\n        events.at(-1).eventEnd = new Date(events.at(-1).eventEnd);      // at(-1) = last index\n      }\n    }\n    else {\n      //node.warn(`Event ${i} : ${msg.payload[i].summary} is discarded`);\n    }\n  }\n\n  // node.warn(events);\n\n\n  ///////////////////////////////////////////////////////////////////////\n  /////////////////    HTTP Request Creation   //////////////////////////\n  ///////////////////////////////////////////////////////////////////////\n  let eventID = 1;\n\n  for (let i = 0; i < events.length; i++) {\n\n    let start = new Date(events[i].eventStart);\n    let end = new Date(events[i].eventEnd);\n\n    // Rule 1 : discard events shorter than 30 minutes\n    const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);\n    if (durationMinutes < icalToScheduleConf.minimumSlotDuration) {\n      node.warn(`Event ${i} \"${events[i].summary}\" discarded (duration < ${icalToScheduleConf.minimumSlotDuration} min).`);\n      continue;\n    }\n\n    // Adjust the time with timeOffsetBeforeStart and timeOffsetBeforeEnd\n    if (icalToScheduleConf.groupEvents) {\n      const midnight = new Date(start);\n      midnight.setHours(0, 0, 0, 0);\n\n      start.setMinutes(start.getMinutes() - roomConf.timeOffsetBeforeStart);\n      end.setMinutes(end.getMinutes() - roomConf.timeOffsetBeforeEnd);\n\n      // Rule 2 : Clamp start to midnight if it went before 00:00\n      if (start < midnight) {\n        start = new Date(midnight);\n        node.warn(`Event ${i} \"${events[i].summary}\" clamp to midnight.`);\n      }\n\n      // Rule 3 : ensure start < end.\n      if (start >= end) {\n        node.warn(`Event ${i} \"${events[i].summary}\" discarded  (start >= end).`);\n        continue;\n      }\n    }\n\n\n    // Create Event request\n    let eventObject = {\n      [eventID]: {\n        \"event-priority\": 16,\n        period: {\n          date: {\n            month: start.getMonth() + 1,\n            year: start.getFullYear(),\n            \"day-of-month\": start.getDate()\n          },\n          type: \"Date\"\n        },\n        name: events[i].summary,\n        transitions: {\n          1: {\n            time: start.toLocaleTimeString(\"fr-FR\", { timeZone: icalToScheduleConf.timeZone }),\n            value: roomConf.tempOccupied,\n            key: \"1\"\n          },\n          2: {\n            time: end.toLocaleTimeString(\"fr-FR\", { timeZone: icalToScheduleConf.timeZone }),\n            value: null,\n            key: \"2\"\n          }\n        },\n        key: String(eventID)\n      }\n    };\n    eventID++;\n    httpRequestEventList = { ...httpRequestEventList, ...eventObject };   // Merge with the previous object\n  }\n\n  let request = {\n    \"method\": \"POST\",\n    \"url\": `https://${icalToScheduleConf.controllerIPAddress}/api/rest/v2/services/bacnet/local/objects/schedules/${roomConf.scheduleID}`,\n    \"headers\": { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n    \"payload\": {\n      \"special-events\": httpRequestEventList,\n      \"object-name\": roomConf.scheduleName,\n      \"schedule-default\": roomConf.tempUnoccupied\n    },\n    \"roomConf\": msg.roomConf\n  };\n\n  return request;\n}\n\n\nif (!msg.error) {\n  //node.warn(\"No error... continue\");\n  return [eventCreation(), null];\n} else {\n  //node.warn(\"Error skip\");\n  return [null, msg];\n}",
+        "func": "let icalToScheduleConf = flow.get('sf_icalToScheduleConf');\nlet roomConf = msg.roomConf;\nlet eventNumber = msg.total;\nlet events = [/* {eventStart : Date , eventEnd : Date,, ...}*/];  // List of events to create.\nlet httpRequestEventList = {};\n\n///////////////////////////////////////////////////////////////////////\n/////////////////     Events manipulation  ////////////////////////////\n///////////////////////////////////////////////////////////////////////\n\nfunction eventCreation() {\n  for (let i = 0; i < eventNumber; i++) {\n    // Event are discarded according to their \"event description\" in the ics file.\n    if (!icalToScheduleConf.eventsToDiscard.some(discardStr => msg.payload[i].description?.includes(discardStr))) {\n\n      //////////  groupEvents == true   //////////////\n      if (icalToScheduleConf.groupEvents) {\n        let msgEventStart = new Date(msg.payload[i].eventStart);\n        let msgEventEnd = new Date(msg.payload[i].eventEnd);\n\n        // Check if an event with same year-date-time already exist in events[].\n        const idx = events.findIndex(evt => {\n          return (\n            msgEventStart.getDate() === evt.eventStart.getDate() &&\n            msgEventEnd.getMonth() === evt.eventStart.getMonth() &&\n            msgEventEnd.getFullYear() === evt.eventStart.getFullYear()\n          );\n        });\n\n        if (idx != -1) {    // Event with same year-date-time already exits\n\n          if (msgEventStart < events[idx].eventStart) events[idx].eventStart = msgEventStart; // Update start time\n          if (msgEventEnd > events[idx].eventEnd) events[idx].eventEnd = msgEventEnd;         // Update end time\n          //node.warn(\"idx : \" + idx);\n          //node.warn(events);\n        }\n        else {               // Add a new event\n          //node.warn(\"Event added\");\n          events.push(msg.payload[i]);\n          events.at(-1).eventStart = new Date(events.at(-1).eventStart);  // at(-1) = last index\n          events.at(-1).eventEnd = new Date(events.at(-1).eventEnd);      // at(-1) = last index\n          events.at(-1).summary = \"Merged Events\";\n          //node.warn(events);\n        }\n      }\n\n      //////////  groupEvents == false   //////////////\n      else {\n        //node.warn(\"Event added\");\n        events.push(msg.payload[i]);\n        events.at(-1).eventStart = new Date(events.at(-1).eventStart);  // at(-1) = last index\n        events.at(-1).eventEnd = new Date(events.at(-1).eventEnd);      // at(-1) = last index\n      }\n    }\n    else {\n      //node.warn(`Event ${i} : ${msg.payload[i].summary} is discarded`);\n    }\n  }\n\n  // node.warn(events);\n\n\n  ///////////////////////////////////////////////////////////////////////\n  /////////////////    HTTP Request Creation   //////////////////////////\n  ///////////////////////////////////////////////////////////////////////\n  let eventID = 1;\n\n  for (let i = 0; i < events.length; i++) {\n\n    let start = new Date(events[i].eventStart);\n    let end = new Date(events[i].eventEnd);\n\n    // Rule 1 : discard events shorter than 30 minutes\n    const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);\n    if (durationMinutes < icalToScheduleConf.minimumSlotDuration) {\n      node.warn(`Event ${i} \"${events[i].summary}\" discarded (duration < ${icalToScheduleConf.minimumSlotDuration} min).`);\n      continue;\n    }\n\n    // Adjust the time with timeOffsetBeforeStart and timeOffsetBeforeEnd\n    if (icalToScheduleConf.groupEvents) {\n      const midnight = new Date(start);\n      midnight.setHours(0, 0, 0, 0);\n\n      start.setMinutes(start.getMinutes() - roomConf.timeOffsetBeforeStart);\n      end.setMinutes(end.getMinutes() - roomConf.timeOffsetBeforeEnd);\n\n      // Rule 2 : Clamp start to midnight if it went before 00:00\n      if (start < midnight) {\n        start = new Date(midnight);\n        node.warn(`Event ${i} \"${events[i].summary}\" clamp to midnight.`);\n      }\n\n      // Rule 3 : ensure start < end.\n      if (start >= end) {\n        node.warn(`Event ${i} \"${events[i].summary}\" discarded  (start >= end).`);\n        continue;\n      }\n    }\n\n\n    // Create Event request\n    let eventObject = {\n      [eventID]: {\n        \"event-priority\": 16,\n        period: {\n          date: {\n            month: start.getMonth() + 1,\n            year: start.getFullYear(),\n            \"day-of-month\": start.getDate()\n          },\n          type: \"Date\"\n        },\n        name: events[i].summary,\n        transitions: {\n          1: {\n            time: start.toLocaleTimeString(\"fr-FR\", { timeZone: icalToScheduleConf.timeZone }),\n            value: roomConf.tempOccupied,\n            key: \"1\"\n          },\n          2: {\n            time: end.toLocaleTimeString(\"fr-FR\", { timeZone: icalToScheduleConf.timeZone }),\n            value: null,\n            key: \"2\"\n          }\n        },\n        key: String(eventID)\n      }\n    };\n    eventID++;\n    httpRequestEventList = { ...httpRequestEventList, ...eventObject };   // Merge with the previous object\n  }\n\n  let request = {\n    \"method\": \"POST\",\n    \"url\": `https://${icalToScheduleConf.controllerIPAddress}/api/rest/v2/services/bacnet/local/objects/schedules/${roomConf.scheduleID}`,\n    \"headers\": { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n    \"payload\": {\n      \"special-events\": httpRequestEventList,\n      \"weekly-schedule\" :  roomConf.weekly  ,\n      \"object-name\": roomConf.scheduleName,\n      \"schedule-default\": roomConf.tempUnoccupied\n    },\n    \"roomConf\": msg.roomConf\n  };\n\n  return request;\n}\n\n\nif (!msg.error) {\n  //node.warn(\"No error... continue\");\n  return [eventCreation(), null];\n} else {\n  //node.warn(\"Error skip\");\n  return [null, msg];\n}",
         "outputs": 2,
         "timeout": 0,
         "noerr": 0,
@@ -1521,12 +1521,24 @@
             "4c598606ae5d455f",
             "4b51466b3b124479",
             "6d0aadf93bcb3dcb",
-            "4eb11c8599185bf8"
+            "4eb11c8599185bf8",
+            "e4d83857f1e66295",
+            "4e6ebaf5965c80ed",
+            "ea2f4af98df53c6f",
+            "e1be88ea5ff19887",
+            "d298eee68a586a0c",
+            "393d2de1a3dd4d28",
+            "013c3b4d2ad370cb",
+            "2fbfc9010c61fc0b",
+            "6f466eea47a546ea",
+            "cead8873ee8b73e1",
+            "981fe7f22dccfc11",
+            "1fa601afaa8cb01f"
         ],
-        "x": 124,
+        "x": 134,
         "y": 519,
-        "w": 982,
-        "h": 202
+        "w": 992,
+        "h": 322
     },
     {
         "id": "e59f934448fe6324",
@@ -1582,7 +1594,7 @@
         "z": "7c27a8c8ec69277d",
         "g": "e59f934448fe6324",
         "name": "TO CONFIGURE",
-        "func": "//////////////////////////////////////////////\n//////////////// TO CONFIGURE ////////////////\n//////////////////////////////////////////////\n\nconst printMissingDevice = false;\nconst defaultControl = \"controlledByEventFromIcal\"; //  controlledByEventFromIcal, controlledBySchedule, controlledByConstant, inactive\n\n// 1. Create BACnet Schedule\nconst timeBetweenScheduleUpdate = 60*60;    // Seconds, Time to refresh calendar events\nconst scheduleInstanceRange = [0, 50];\nconst groupEvents = true;               // Group events in 1 event/day\nconst timeZone = 'Europe/Paris';        // What are the other options ?\nconst eventsToDiscard = [\"SOBRIETE ENERGETIQUE\"]; // all events that content this string in their description will be ignored\nconst defaultTempOccupied = 20;\nconst defaultTempUnoccupied = 15;\nconst defaultTimeOffsetBeforeStart = 120;            // in mins\nconst defaultTimeOffsetBeforeEnd = 30;              // in mins\nconst defaultNbrDaysPreview = 10;                   // Days, max is defined in the \"Get Room Calendar\" node.\nconst defaultAddSuffixToAdeURL = true;\nconst minimumSlotDuration = 0;                     // in mins\n\n// 2. Analog value for each schedule\nconst scheduleAVInstanceOffset = 10000;  //  The starting instance of theses values\nconst timeBetweenScheduleAVUpdate = 30; //   Seconds\n\n// Info : \n// * minimumSlotDuration is only checked when groupEvents = false.\n// * defaultTimeOffsetBeforeStart and defaultTimeOffsetBeforeEnd are only applied when groupEvents = true.\n// * eventsToDiscard is always appliead whatever groupsEvents value.\n// * control : \n//          controlledByEventFromIcal : createSchedule, add event, create scheduleAV, create Bindings.\n//          controlledBySchedule :      createSchedule,            create scheduleAV, create Bindings.\n//          controlledByConstant :                                 create scheduleAV, create Bindings.\n//          Inactive : Rien.\n\n\n/////////////////////////////\n///// Rooms Informations  ///\n/////////////////////////////\n\n/* Room Template \n{\n    // Mandatory //\n    \"scheduleName\": \"roomName0\",\n    \"devices\": { \"device-1\": { \"deviceNums\": [1, 2, 3], \"AVToBindName\": \"controllerSetpoint\" } },\n    \"url\": 'https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=1480&projectId=5&calType=ical&lastDate=2042-08-14',\n    \n    // Optionnal, if not specified the default value will be applied //\n    \"control\": [ controlledByEventFromIcal, controlledBySchedule, controlledByConstant, inactive ]\n    \"nbrDaysPreview\" : defaultNbrDaysPreview,\n    \"tempOccupied\": defaultTempOccupied,\n    \"tempUnoccupied\": defaultTempUnoccupied,\n    \"timeOffsetBeforeStart\": defaultTimeOffsetBeforeStart,\n    \"timeOffsetBeforeEnd\": defaultTimeOffsetBeforeEnd,\n    \"addSuffixToAdeURL\" : defaultAddSuffixToAdeURL\n*/\n\n\nlet rooms = [\n\n]\n\n\n\n/////////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////////\n/////////////////////////////////////////////////\nconst controlSet = [\"controlledByEventFromIcal\", \"controlledBySchedule\", \"controlledByConstant\", \"inactive\"];\nconst deviceList = global.get('g_deviceList');    // From LoRaBAC node\n\nif (rooms.length === 0) {\n    node.error(`No Room configuration available`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nif (!deviceList) {\n    node.error(`Device List missing from LoRaBAC node`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nfor (let device in deviceList) {\n    if (Object.keys(deviceList).some(dev => deviceList[dev].controller.ipAddress != deviceList[device].controller.ipAddress)) {\n        node.error(`Controller IP Address are not all the same in device list`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n}\n\nif (scheduleInstanceRange[0] > scheduleInstanceRange[1] || scheduleInstanceRange.length !== 2) {\n    node.error(`Wrong Schedule instance range`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nif (Object.keys(rooms).length > (scheduleInstanceRange[1] - scheduleInstanceRange[0] + 1)) {\n    node.error(`Too many rooms, increase Schedule Instance Range`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\n\nconst scheduleNames = rooms.map(room => room.scheduleName);\nif (new Set(scheduleNames).size !== scheduleNames.length) {\n    node.error(`Duplicate ScheduleName in room configuration`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nlet scheduleID = 0;\nlet deviceNums = {};\n\n\nfor (let room in rooms) {\n\n    rooms[room].scheduleID = scheduleID++;\n\n    if (!rooms[room].hasOwnProperty(\"scheduleName\")) {\n        node.error(`One room  has no scheduleName in room configuration`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"devices\")) {\n        node.error(`Room  ${rooms[room].scheduleName} has no devices`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"control\")) {\n        rooms[room].control = defaultControl;\n    }\n\n    if (!controlSet.some(element => element == rooms[room].control)) {\n        node.error(`Room  ${rooms[room].scheduleName} control mode doesn't exist`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"url\") && rooms[room].control === \"controlledByEventFromIcal\") {\n        node.error(`Room  ${rooms[room].scheduleName} has no url`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].url && rooms[room].control === \"controlledByEventFromIcal\") {\n        node.error(`url falsy value for ${rooms[room].scheduleName}`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (rooms[room].scheduleID > scheduleInstanceRange[1]) {\n        node.error(`Room ${rooms[room].scheduleName} has a scheduleID over the allocated range (${scheduleInstanceRange[1]}) `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n\n\n    for (let device in rooms[room].devices) {\n        deviceNums[device] = (deviceNums[device] || []).concat(rooms[room].devices[device].deviceNums);\n        //node.warn(deviceNums);\n\n        if (!Object.keys(deviceList).some(deviceType => deviceType == device)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device type that doesn't belong to the device list`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        }\n\n        if (!Object.keys(deviceList[device].bacnet.objects).some(object => object == rooms[room].devices[device].AVToBindName)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device with AVToBindName (${rooms[room].devices[device].AVToBindName}) that doesn't exist in the device List`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        } else if (deviceList[device].bacnet.objects[rooms[room].devices[device].AVToBindName].dataDirection !== \"downlink\") {\n            node.error(`${rooms[room].devices[device].AVToBindName} can't be an AVToBindName because it is not a downlink object in ${device}`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n\n        }\n        rooms[room].devices[device].deviceNums\n        if (rooms[room].devices[device].deviceNums.some(numDevice => numDevice > deviceList[device].identity.maxDevNum)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device number that exceed the maximum (${deviceList[device].identity.maxDevNum}) for device type ${device}`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        }\n\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeZone\")) {\n        rooms[room].timeZone = timeZone;\n    }\n    if (!rooms[room].timeZone) {\n        node.error(`timeZone falsy value for ${rooms[room].scheduleName} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempUnoccupied\")) {\n        rooms[room].tempUnoccupied = defaultTempUnoccupied;\n    }\n    if (!rooms[room].tempUnoccupied) {\n        node.error(`tempUnoccupied falsy value : ${rooms[room].tempUnoccupied} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempOccupied\")) {\n        rooms[room].tempOccupied = defaultTempOccupied;\n    }\n    if (!rooms[room].tempOccupied) {\n        node.error(`tempOccupied falsy value : ${rooms[room].tempOccupied} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeOffsetBeforeStart\")) {\n        rooms[room].timeOffsetBeforeStart = defaultTimeOffsetBeforeStart;\n    }\n    if (!rooms[room].timeOffsetBeforeStart) {\n        node.error(`timeOffsetBeforeStart falsy value : ${rooms[room].timeOffsetBeforeStart} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeOffsetBeforeEnd\")) {\n        rooms[room].timeOffsetBeforeEnd = defaultTimeOffsetBeforeEnd;\n    }\n    if (!rooms[room].timeOffsetBeforeEnd) {\n        node.error(`timeOffsetBeforeEnd falsy value : ${rooms[room].timeOffsetBeforeEnd} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"nbrDaysPreview\")) {\n        rooms[room].nbrDaysPreview = defaultNbrDaysPreview;\n    }\n    if (!rooms[room].nbrDaysPreview) {\n        node.error(`nbrDaysPreview falsy value : ${rooms[room].nbrDaysPreview} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"addSuffixToAdeURL\")) {\n        rooms[room].addSuffixToAdeURL = defaultAddSuffixToAdeURL;\n    }\n\n\n    if (rooms[room].addSuffixToAdeURL && rooms[room].control === \"controlledByEventFromIcal\") {\n        const date = new Date();\n        date.setDate(date.getDate() + rooms[room].nbrDaysPreview);\n        let adeSuffixe = date.toISOString().slice(0, 10)\n        if (rooms[room].url.includes(\"&lastDate\")) {\n            rooms[room].url = rooms[room].url.replace(/&lastDate=\\d{4}-\\d{2}-\\d{2}/, `&lastDate=${adeSuffixe}`);\n        }\n        else {\n            rooms[room].url += `&lastDate=${adeSuffixe}`;\n        }\n    }\n}\n\n\nlet missingDev = \"INFO : Missing devices : \";\nfor (let device in deviceNums) {\n    const deviceNumSet = new Set(deviceNums[device]);\n\n    if (deviceNumSet.size !== deviceNums[device].length) {\n        node.error(`${device} as duplicate device Numbers in the configuration`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    missingDev += device + \" : \";\n    for (let i = 1; i < Math.max(...deviceNumSet); i++) {\n        if (!Array.from(deviceNumSet).some(element => element == i)) {\n            missingDev += i + \", \";\n        }\n    }\n}\n\nif (printMissingDevice) {\n    node.warn(missingDev);\n}\n\n\nnode.status({ fill: \"green\", shape: \"dot\", text: `Configuration OK` });\n\nfor (let device in deviceList) {\n    const buffer = Buffer.from(deviceList[device].controller.login + ':' + deviceList[device].controller.password);\n    deviceList[device].controller.httpAuthentication = \"Basic \" + buffer.toString('base64');\n}\n\n// Store variables\n\nlet icalToScheduleConf = {\n    controllerIPAddress: deviceList[Object.keys(deviceList)[0]].controller.ipAddress,\n    controllerLogin: deviceList[Object.keys(deviceList)[0]].controller.login,\n    controllerPassword: deviceList[Object.keys(deviceList)[0]].controller.password,\n    httpAuthentication: deviceList[Object.keys(deviceList)[0]].controller.httpAuthentication,\n    timeBetweenScheduleUpdate: timeBetweenScheduleUpdate,\n    timeBetweenScheduleAVUpdate: timeBetweenScheduleAVUpdate,\n    defaultTimeOffsetBeforeStart: defaultTimeOffsetBeforeStart,     // To remove ?\n    defaultTimeOffsetBeforeEnd: defaultTimeOffsetBeforeEnd,         // To remove ?\n    scheduleInstanceRange: scheduleInstanceRange,\n    groupEvents: groupEvents,\n    timeZone: timeZone,                                             // To remove ?\n    eventsToDiscard: eventsToDiscard,\n    scheduleAVInstanceOffset: scheduleAVInstanceOffset,\n    minimumSlotDuration: minimumSlotDuration,\n}\n\nflow.set('f_icalToScheduleConf', icalToScheduleConf); // For Debug section only (to reach the BMS IP address)\nflow.set('f_rooms', rooms);\n\nreturn msg = {\n    icalToScheduleConf: icalToScheduleConf,\n    rooms: rooms\n};\n\n\n",
+        "func": "//////////////////////////////////////////////\n//////////////// TO CONFIGURE ////////////////\n//////////////////////////////////////////////\n\nconst printMissingDevice = false;\nconst defaultControl = \"controlledByEventFromIcal\"; //  controlledByEventFromIcal, controlledBySchedule, controlledByConstant, inactive\n\n// 1. Create BACnet Schedule\nconst timeBetweenScheduleUpdate = 60 * 60;    // Seconds, Time to refresh calendar events\nconst scheduleInstanceRange = [0, 50];\nconst groupEvents = true;               // Group events in 1 event/day\nconst timeZone = 'Europe/Paris';        // What are the other options ?\nconst eventsToDiscard = [\"SOBRIETE ENERGETIQUE\"]; // all events that content this string in their description will be ignored\nconst defaultTempOccupied = 20;\nconst defaultTempUnoccupied = 15;\nconst defaultTimeOffsetBeforeStart = 120;            // in mins\nconst defaultTimeOffsetBeforeEnd = 30;              // in mins\nconst defaultNbrDaysPreview = 10;                   // Days, max is defined in the \"Get Room Calendar\" node.\nconst defaultAddSuffixToAdeURL = true;\nconst minimumSlotDuration = 0;                     // in mins\nconst defaultWeekly = {\n    monday: { transitions: {} },\n    tuesday: { transitions: {} },\n    wednesday: { transitions: {} },\n    thursday: { transitions: {} },\n    friday: {\n        transitions: {\n            \"1\": { time: \"15:00:00.00\", value: 7, key: \"1\" },\n            \"2\": { time: \"23:59:59.00\", value: null, key: \"2\" }\n        }\n    },\n    saturday: {\n        transitions: {\n            \"1\": { time: \"00:00:00.00\", value: 7, key: \"1\" },\n            \"2\": { time: \"23:59:59.00\", value: null, key: \"2\" }\n        }\n    },\n    sunday: {\n        transitions: {\n            \"1\": { time: \"00:00:00.00\", value: 7, key: \"1\" },\n            \"2\": { time: \"21:00:00.00\", value: null, key: \"2\" }\n        }\n    }\n}\n\n// 2. Analog value for each schedule\nconst scheduleAVInstanceOffset = 10000;  //  The starting instance of theses values\nconst timeBetweenScheduleAVUpdate = 30; //   Seconds\n\n// Info : \n// * minimumSlotDuration is only checked when groupEvents = false.\n// * defaultTimeOffsetBeforeStart and defaultTimeOffsetBeforeEnd are only applied when groupEvents = true.\n// * eventsToDiscard is always appliead whatever groupsEvents value.\n// * control : \n//          controlledByEventFromIcal : createSchedule, add event, create scheduleAV, create Bindings.\n//          controlledBySchedule :      createSchedule,            create scheduleAV, create Bindings.\n//          controlledByConstant :                                 create scheduleAV, create Bindings.\n//          Inactive : Does nothing.\n\n\n/////////////////////////////\n///// Rooms Informations  ///\n/////////////////////////////\n\n/* Room Template \n{\n    // Mandatory //\n    \"scheduleName\": \"roomName0\",\n    \"devices\": { \"device-1\": { \"deviceNums\": [1, 2, 3], \"AVToBindName\": \"controllerSetpoint\" } },\n    \"url\": 'https://ade-usmb-ro.grenet.fr/jsp/custom/modules/plannings/direct_cal.jsp?data=b5cfb898a9c27be94975c12c6eb30e9233bdfae22c1b52e2cd88eb944acf5364c69e3e5921f4a6ebe36e93ea9658a08f,1&resources=1480&projectId=5&calType=ical&lastDate=2042-08-14',\n    \n    // Optionnal, if not specified the default value will be applied //\n    \"control\": [ controlledByEventFromIcal, controlledBySchedule, controlledByConstant, inactive ]\n    \"weekly\" : defaultWeekly,\n    \"nbrDaysPreview\" : defaultNbrDaysPreview,\n    \"tempOccupied\": defaultTempOccupied,\n    \"tempUnoccupied\": defaultTempUnoccupied,\n    \"timeOffsetBeforeStart\": defaultTimeOffsetBeforeStart,\n    \"timeOffsetBeforeEnd\": defaultTimeOffsetBeforeEnd,\n    \"addSuffixToAdeURL\" : defaultAddSuffixToAdeURL\n*/\n\n\nlet rooms = [\n\n]\n\n\n\n\n/////////////////////////////////////////////////\n/////////////// DO NOT MODIFY ///////////////////\n/////////////////////////////////////////////////\nconst controlSet = [\"controlledByEventFromIcal\", \"controlledBySchedule\", \"controlledByConstant\", \"inactive\"];\nconst deviceList = global.get('g_deviceList');    // From LoRaBAC node\n\nif (rooms.length === 0) {\n    node.error(`No Room configuration available`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nif (!deviceList) {\n    node.error(`Device List missing from LoRaBAC node`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nfor (let device in deviceList) {\n    if (Object.keys(deviceList).some(dev => deviceList[dev].controller.ipAddress != deviceList[device].controller.ipAddress)) {\n        node.error(`Controller IP Address are not all the same in device list`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n}\n\nif (scheduleInstanceRange[0] > scheduleInstanceRange[1] || scheduleInstanceRange.length !== 2) {\n    node.error(`Wrong Schedule instance range`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nif (Object.keys(rooms).length > (scheduleInstanceRange[1] - scheduleInstanceRange[0] + 1)) {\n    node.error(`Too many rooms, increase Schedule Instance Range`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\n\nconst scheduleNames = rooms.map(room => room.scheduleName);\nif (new Set(scheduleNames).size !== scheduleNames.length) {\n    node.error(`Duplicate ScheduleName in room configuration`);\n    node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n    return null;\n}\n\nlet scheduleID = 0;\nlet deviceNums = {};\n\n\nfor (let room in rooms) {\n\n    rooms[room].scheduleID = scheduleID++;\n\n    if (!rooms[room].hasOwnProperty(\"scheduleName\")) {\n        node.error(`One room  has no scheduleName in room configuration`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"devices\")) {\n        node.error(`Room  ${rooms[room].scheduleName} has no devices`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"control\")) {\n        rooms[room].control = defaultControl;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"weekly\")) {\n        rooms[room].weekly = defaultWeekly;\n    }\n\n    if (!controlSet.some(element => element == rooms[room].control)) {\n        node.error(`Room  ${rooms[room].scheduleName} control mode doesn't exist`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"url\") && rooms[room].control === \"controlledByEventFromIcal\") {\n        node.error(`Room  ${rooms[room].scheduleName} has no url`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].url && rooms[room].control === \"controlledByEventFromIcal\") {\n        node.error(`url falsy value for ${rooms[room].scheduleName}`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (rooms[room].scheduleID > scheduleInstanceRange[1]) {\n        node.error(`Room ${rooms[room].scheduleName} has a scheduleID over the allocated range (${scheduleInstanceRange[1]}) `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n\n\n    for (let device in rooms[room].devices) {\n        deviceNums[device] = (deviceNums[device] || []).concat(rooms[room].devices[device].deviceNums);\n        //node.warn(deviceNums);\n\n        if (!Object.keys(deviceList).some(deviceType => deviceType == device)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device type that doesn't belong to the device list`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        }\n\n        if (!Object.keys(deviceList[device].bacnet.objects).some(object => object == rooms[room].devices[device].AVToBindName)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device with AVToBindName (${rooms[room].devices[device].AVToBindName}) that doesn't exist in the device List`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        } else if (deviceList[device].bacnet.objects[rooms[room].devices[device].AVToBindName].dataDirection !== \"downlink\") {\n            node.error(`${rooms[room].devices[device].AVToBindName} can't be an AVToBindName because it is not a downlink object in ${device}`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n\n        }\n        rooms[room].devices[device].deviceNums\n        if (rooms[room].devices[device].deviceNums.some(numDevice => numDevice > deviceList[device].identity.maxDevNum)) {\n            node.error(`Room ${rooms[room].scheduleName} has a device number that exceed the maximum (${deviceList[device].identity.maxDevNum}) for device type ${device}`);\n            node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n            return null;\n        }\n\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeZone\")) {\n        rooms[room].timeZone = timeZone;\n    }\n    if (!rooms[room].timeZone) {\n        node.error(`timeZone falsy value for ${rooms[room].scheduleName} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempUnoccupied\")) {\n        rooms[room].tempUnoccupied = defaultTempUnoccupied;\n    }\n    if (!rooms[room].tempUnoccupied) {\n        node.error(`tempUnoccupied falsy value : ${rooms[room].tempUnoccupied} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"tempOccupied\")) {\n        rooms[room].tempOccupied = defaultTempOccupied;\n    }\n    if (!rooms[room].tempOccupied) {\n        node.error(`tempOccupied falsy value : ${rooms[room].tempOccupied} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeOffsetBeforeStart\")) {\n        rooms[room].timeOffsetBeforeStart = defaultTimeOffsetBeforeStart;\n    }\n    if (!rooms[room].timeOffsetBeforeStart) {\n        node.error(`timeOffsetBeforeStart falsy value : ${rooms[room].timeOffsetBeforeStart} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"timeOffsetBeforeEnd\")) {\n        rooms[room].timeOffsetBeforeEnd = defaultTimeOffsetBeforeEnd;\n    }\n    if (!rooms[room].timeOffsetBeforeEnd) {\n        node.error(`timeOffsetBeforeEnd falsy value : ${rooms[room].timeOffsetBeforeEnd} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"nbrDaysPreview\")) {\n        rooms[room].nbrDaysPreview = defaultNbrDaysPreview;\n    }\n    if (!rooms[room].nbrDaysPreview) {\n        node.error(`nbrDaysPreview falsy value : ${rooms[room].nbrDaysPreview} `);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    if (!rooms[room].hasOwnProperty(\"addSuffixToAdeURL\")) {\n        rooms[room].addSuffixToAdeURL = defaultAddSuffixToAdeURL;\n    }\n\n\n    if (rooms[room].addSuffixToAdeURL && rooms[room].control === \"controlledByEventFromIcal\") {\n        const date = new Date();\n        date.setDate(date.getDate() + rooms[room].nbrDaysPreview);\n        let adeSuffixe = date.toISOString().slice(0, 10)\n        if (rooms[room].url.includes(\"&lastDate\")) {\n            rooms[room].url = rooms[room].url.replace(/&lastDate=\\d{4}-\\d{2}-\\d{2}/, `&lastDate=${adeSuffixe}`);\n        }\n        else {\n            rooms[room].url += `&lastDate=${adeSuffixe}`;\n        }\n    }\n}\n\n\nlet missingDev = \"INFO : Missing devices : \";\nfor (let device in deviceNums) {\n    const deviceNumSet = new Set(deviceNums[device]);\n\n    if (deviceNumSet.size !== deviceNums[device].length) {\n        node.error(`${device} as duplicate device Numbers in the configuration`);\n        node.status({ fill: \"red\", shape: \"dot\", text: `Configuration error` });\n        return null;\n    }\n\n    missingDev += device + \" : \";\n    for (let i = 1; i < Math.max(...deviceNumSet); i++) {\n        if (!Array.from(deviceNumSet).some(element => element == i)) {\n            missingDev += i + \", \";\n        }\n    }\n}\n\nif (printMissingDevice) {\n    node.warn(missingDev);\n}\n\n\nnode.status({ fill: \"green\", shape: \"dot\", text: `Configuration OK` });\n\nfor (let device in deviceList) {\n    const buffer = Buffer.from(deviceList[device].controller.login + ':' + deviceList[device].controller.password);\n    deviceList[device].controller.httpAuthentication = \"Basic \" + buffer.toString('base64');\n}\n\n// Store variables\n\nlet icalToScheduleConf = {\n    controllerIPAddress: deviceList[Object.keys(deviceList)[0]].controller.ipAddress,\n    controllerLogin: deviceList[Object.keys(deviceList)[0]].controller.login,\n    controllerPassword: deviceList[Object.keys(deviceList)[0]].controller.password,\n    httpAuthentication: deviceList[Object.keys(deviceList)[0]].controller.httpAuthentication,\n    timeBetweenScheduleUpdate: timeBetweenScheduleUpdate,\n    timeBetweenScheduleAVUpdate: timeBetweenScheduleAVUpdate,\n    defaultTimeOffsetBeforeStart: defaultTimeOffsetBeforeStart,     // To remove ?\n    defaultTimeOffsetBeforeEnd: defaultTimeOffsetBeforeEnd,         // To remove ?\n    scheduleInstanceRange: scheduleInstanceRange,\n    groupEvents: groupEvents,\n    timeZone: timeZone,                                             // To remove ?\n    eventsToDiscard: eventsToDiscard,\n    scheduleAVInstanceOffset: scheduleAVInstanceOffset,\n    minimumSlotDuration: minimumSlotDuration,\n}\n\nflow.set('f_icalToScheduleConf', icalToScheduleConf); // For Debug section only (to reach the BMS IP address)\nflow.set('f_rooms', rooms);\n\nreturn msg = {\n    icalToScheduleConf: icalToScheduleConf,\n    rooms: rooms\n};\n\n\n",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -1632,7 +1644,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 185,
+        "x": 195,
         "y": 560,
         "wires": [
             [
@@ -1654,7 +1666,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
+        "x": 330,
         "y": 560,
         "wires": [
             [
@@ -1679,7 +1691,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 490,
+        "x": 500,
         "y": 560,
         "wires": [
             [
@@ -1701,7 +1713,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 990,
+        "x": 1000,
         "y": 560,
         "wires": []
     },
@@ -1717,7 +1729,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 185,
+        "x": 195,
         "y": 600,
         "wires": [
             [
@@ -1739,7 +1751,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
+        "x": 320,
         "y": 600,
         "wires": [
             [
@@ -1764,7 +1776,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 490,
+        "x": 500,
         "y": 600,
         "wires": [
             [
@@ -1786,7 +1798,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 980,
+        "x": 990,
         "y": 600,
         "wires": []
     },
@@ -1803,7 +1815,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 660,
+        "x": 670,
         "y": 640,
         "wires": [
             [
@@ -1823,7 +1835,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "",
-        "x": 185,
+        "x": 195,
         "y": 640,
         "wires": [
             [
@@ -1846,7 +1858,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 980,
+        "x": 990,
         "y": 640,
         "wires": []
     },
@@ -1867,7 +1879,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 840,
+        "x": 850,
         "y": 640,
         "wires": [
             [
@@ -1888,7 +1900,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
+        "x": 320,
         "y": 640,
         "wires": [
             [
@@ -1913,7 +1925,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 490,
+        "x": 500,
         "y": 640,
         "wires": [
             [
@@ -1954,7 +1966,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 320,
+        "x": 330,
         "y": 680,
         "wires": [
             [
@@ -1980,7 +1992,7 @@
         "topic": "",
         "payload": "true",
         "payloadType": "bool",
-        "x": 185,
+        "x": 195,
         "y": 680,
         "wires": [
             [
@@ -2006,7 +2018,7 @@
         "authType": "",
         "senderr": false,
         "headers": [],
-        "x": 490,
+        "x": 500,
         "y": 680,
         "wires": [
             [
@@ -2028,7 +2040,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 980,
+        "x": 990,
         "y": 680,
         "wires": []
     },
@@ -2256,6 +2268,261 @@
         ]
     },
     {
+        "id": "4e6ebaf5965c80ed",
+        "type": "function",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "List Special events",
+        "func": "let icalToScheduleConf = flow.get('f_icalToScheduleConf');\n\nreturn {\n    \"method\": \"GET\",\n    \"url\": \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/services/bacnet/local/objects/schedules/0/special-events\",\n    \"headers\": { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" }\n};",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 720,
+        "wires": [
+            [
+                "e1be88ea5ff19887"
+            ]
+        ]
+    },
+    {
+        "id": "ea2f4af98df53c6f",
+        "type": "inject",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 195,
+        "y": 720,
+        "wires": [
+            [
+                "4e6ebaf5965c80ed"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "e1be88ea5ff19887",
+        "type": "http request",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "HTTP",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "ad66506e746a6eea",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 500,
+        "y": 720,
+        "wires": [
+            [
+                "d298eee68a586a0c"
+            ]
+        ]
+    },
+    {
+        "id": "d298eee68a586a0c",
+        "type": "debug",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "Schedules",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1000,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "393d2de1a3dd4d28",
+        "type": "function",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "Set weekly events",
+        "func": "let icalToScheduleConf = flow.get('f_icalToScheduleConf');\n\nreturn {\n    \"method\": \"POST\",\n    \"url\": \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/services/bacnet/local/objects/schedules/0/weekly-schedule\",\n    \"headers\": { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" },\n    \"payload\":\n    {\n        monday: {\n            transitions: {\n                \"1\": { time: \"14:00:00.00\", value: 7, key: \"1\" },\n                \"2\": { time: \"18:30:00.00\", value: null, key: \"2\" }\n\n            }\n        },\n        tuesday: { transitions: {} },\n        wednesday: { transitions: {} },\n        thursday: { transitions: {} },\n        friday: { transitions: {} },\n        saturday: { transitions: {} },\n        sunday: { transitions: {} }\n    }\n};",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 800,
+        "wires": [
+            [
+                "2fbfc9010c61fc0b"
+            ]
+        ]
+    },
+    {
+        "id": "013c3b4d2ad370cb",
+        "type": "inject",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 195,
+        "y": 800,
+        "wires": [
+            [
+                "393d2de1a3dd4d28"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "2fbfc9010c61fc0b",
+        "type": "http request",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "HTTP",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "ad66506e746a6eea",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 500,
+        "y": 800,
+        "wires": [
+            [
+                "e4d83857f1e66295"
+            ]
+        ]
+    },
+    {
+        "id": "e4d83857f1e66295",
+        "type": "debug",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "Schedules",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "6f466eea47a546ea",
+        "type": "function",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "List Weekly events",
+        "func": "let icalToScheduleConf = flow.get('f_icalToScheduleConf');\n\nreturn {\n    \"method\": \"GET\",\n    \"url\": \"https://\" + icalToScheduleConf.controllerIPAddress + \"/api/rest/v2/services/bacnet/local/objects/schedules/0/weekly-schedule\",\n    \"headers\": { Authorization: icalToScheduleConf.httpAuthentication, \"Content-Type\": \"application/json\" }\n};",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 760,
+        "wires": [
+            [
+                "981fe7f22dccfc11"
+            ]
+        ]
+    },
+    {
+        "id": "cead8873ee8b73e1",
+        "type": "inject",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 195,
+        "y": 760,
+        "wires": [
+            [
+                "6f466eea47a546ea"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "981fe7f22dccfc11",
+        "type": "http request",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "HTTP",
+        "method": "use",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "ad66506e746a6eea",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 500,
+        "y": 760,
+        "wires": [
+            [
+                "1fa601afaa8cb01f"
+            ]
+        ]
+    },
+    {
+        "id": "1fa601afaa8cb01f",
+        "type": "debug",
+        "z": "7c27a8c8ec69277d",
+        "g": "cc921d23986230be",
+        "name": "Schedules",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1000,
+        "y": 760,
+        "wires": []
+    },
+    {
         "id": "ad66506e746a6eea",
         "type": "tls-config",
         "name": "",
@@ -2328,7 +2595,7 @@
                 "cols": "12"
             }
         ],
-        "order": 3,
+        "order": 2,
         "className": "",
         "visible": true,
         "disabled": false

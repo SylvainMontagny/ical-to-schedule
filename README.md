@@ -57,6 +57,7 @@ Configuration to create BACnet schedule :
 * **defaultNbrDaysPreview**:  Number of days preloaded with events in schedule BACnet object if not mentionned in the room configuration.
 * **defaultAddSuffixToAdeURL**: use this option when using ADE calendar [true, false]
 * **minimumSlotDuration**: Event below this time will be discarded.
+* **defaultWeekly**: Weekly schedule applied by default if not mentionned in the room configuration.
 
 Configuration to create Analog value for each schedule
 * **scheduleAVInstanceOffset**: Starting instance number for the analog value associated with each schedule.
@@ -83,7 +84,7 @@ let rooms = [
     "tempUnoccupied": defaultTempUnoccupied,
     "timeOffsetBeforeStart": defaultTimeOffsetBeforeStart,
     "timeOffsetBeforeEnd": defaultTimeOffsetBeforeEnd,
-    "addSuffixToAdeURL" : defaultAddSuffixToAdeURL
+    "addSuffixToAdeURL" : defaultAddSuffixToAdeURL,
 }
 ];
 ```
